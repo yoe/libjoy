@@ -141,7 +141,7 @@ gchar* gjs_joystick_describe_button(GjsJoystick* self, guint8 button) {
 
 enum gjs_button_type gjs_joystick_get_button_type(GjsJoystick* self, guchar button) {
 	g_assert(button < self->priv->nbuts);
-	return (enum gjs_button_type)(self->priv->butmap[button]);
+	return (enum gjs_button_type)(self->priv->butmap[button] - BTN_MISC);
 }
 
 enum gjs_axis_type gjs_joystick_get_axis_type(GjsJoystick* self, guchar axis) {

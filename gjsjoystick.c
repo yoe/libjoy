@@ -68,6 +68,14 @@ GjsJoystick* gjs_joystick_open(gchar* devname) {
 	return GJS_JOYSTICK(g_object_new(GJS_JOYSTICK_TYPE, "devnode", devname, NULL));
 }
 
+gchar** gjs_joystick_enumerate(void) {
+	/* XXX */
+}
+
+gchar* gjs_joystick_describe_unopened(gchar* devname, GError** err) {
+	/* XXX */
+}
+
 gboolean gjs_joystick_reopen(GjsJoystick* self, gchar* devname, GError** err) {
 	self->priv->ready = FALSE;
 	if(self->priv->fd >= 0) {
@@ -324,6 +332,14 @@ GType gjs_joystick_get_type(void) {
 	return type;
 }
 
+void gjs_joystick_iteration(GjsJoystick* self) {
+	/* XXX */
+}
+
+void gjs_joystick_loop(GjsJoystick* self) {
+	/* XXX */
+}
+
 void gjs_joystick_set_mode(GjsJoystick* self, GjsMode mode) {
 	if(self->priv->mode != mode) {
 		if(mode == GJS_MODE_MANUAL) {
@@ -343,4 +359,8 @@ void gjs_joystick_set_mode(GjsJoystick* self, GjsMode mode) {
 
 GQuark gjs_get_errdomain(void) {
 	return g_quark_from_string("Gjs");
+}
+
+GType gjs_error_get_type(void) {
+	/* XXX */
 }

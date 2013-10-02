@@ -28,5 +28,7 @@ int main(void) {
 		printf("Button %u: %s\n", i, gjs_joystick_describe_button(js, i));
 	}
 
+	g_object_unref(js);
+
 	return 0;
 }

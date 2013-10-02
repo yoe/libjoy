@@ -172,6 +172,27 @@ static void get_property(GObject* object, guint property_id, GValue *value, GPar
 	}
 }
 
+static void finalize(GObject* object) {
+	GjsJoystick* self = GJS_JOYSTICK(object);
+
+	if(self->priv->fd >= 0) {
+		close(self->priv->fd);
+	}
+	if(self->priv->source) {
+		g_source_remove(g_source_get_id((GSource*)(self->priv->source)));
+	}
+	if(self->priv->butvals) {
+		g_array_free(self->priv->butvals, TRUE);
+	}
+	if(self->priv->axvals) {
+		g_array_free(self->priv->axvals, TRUE);
+	}
+	if(self->priv->devname) {
+		g_free(self->priv->devname);
+	}
+	g_free(self->priv);
+}
+
 static void set_property(GObject* object, guint property_id, const GValue *value, GParamSpec *pspec) {
 	GjsJoystick *self = GJS_JOYSTICK(object);
 	switch(property_id) {
@@ -203,6 +224,7 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
 
 	gobject_class->get_property = get_property;
 	gobject_class->set_property = set_property;
+	gobject_class->finalize = finalize;
 	klass->button_pressed = g_signal_new("button-pressed",
 				G_TYPE_FROM_CLASS(g_class),
 				G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE,

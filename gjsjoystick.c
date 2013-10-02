@@ -73,7 +73,10 @@ gchar** gjs_joystick_enumerate(void) {
 }
 
 gchar* gjs_joystick_describe_unopened(gchar* devname, GError** err) {
-	/* XXX */
+	GjsJoystick* gjs = gjs_joystick_open(devname);
+	gchar* retval = gjs_joystick_describe(gjs, err);
+	g_object_unref(gjs);
+	return retval;
 }
 
 gboolean gjs_joystick_reopen(GjsJoystick* self, gchar* devname, GError** err) {

@@ -11,7 +11,9 @@ gjs-marshallers.c: gmarshal.list
 	glib-genmarshal --body --prefix=gjs_cclosure_marshal < $^ > $@
 gjs-marshallers.h: gmarshal.list
 	glib-genmarshal --header --prefix=gjs_cclosure_marshal < $^ > $@
+if GTK_ON
 bin_PROGRAMS = gjstest
+endif
 gjstest_SOURCES = gjstest.c
-gjstest_CPPFLAGS = @CFLAGS@ @GOBJECT_CFLAGS@
-gjstest_LDADD = libgjs.la @GOBJECT_LIBS@
+gjstest_CPPFLAGS = @CFLAGS@ @GTK_CFLAGS@
+gjstest_LDADD = libgjs.la @GTK_LIBS@

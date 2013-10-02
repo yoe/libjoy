@@ -225,7 +225,11 @@ static gboolean check_fd(GSource* src) {
 }
 
 static gboolean dispatch_fd(GSource* src, GSourceFunc callback, gpointer user_data) {
-	/* XXX */
+	GjsJoystickSource* self = (GjsJoystickSource*)src;
+	if(g_source_query_unix_fd(src, self->tag) & G_IO_IN) {
+		gjs_joystick_iteration(self->js);
+	}
+	return TRUE;
 }
 
 static void class_init(gpointer g_class, gpointer g_class_data) {

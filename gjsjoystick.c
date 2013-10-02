@@ -70,7 +70,7 @@ GjsJoystick* gjs_joystick_open(gchar* devname) {
 
 gboolean gjs_joystick_reopen(GjsJoystick* self, gchar* devname, GError** err) {
 	self->priv->ready = FALSE;
-	if(self->priv->fd != 0) {
+	if(self->priv->fd >= 0) {
 		close(self->priv->fd);
 	}
 	if(devname) {
@@ -81,13 +81,12 @@ gboolean gjs_joystick_reopen(GjsJoystick* self, gchar* devname, GError** err) {
 	}
 	if(!self->priv->devname) {
 		g_set_error(err, GJS_ERROR_DOMAIN, GJS_ERR_NDEV, "Could not open joystick: no device name provided!");
-		self->priv->fd = 0;
+		self->priv->fd = -1;
 		return FALSE;
 	}
 	self->priv->fd = open(self->priv->devname, O_RDWR);
 	if(self->priv->fd < 0) {
 		g_set_error(err, GJS_ERROR_DOMAIN, GJS_ERR_DEV_NREADY, "Could not open %s: %s", devname, strerror(errno));
-		self->priv->fd = 0;
 		return FALSE;
 	}
 	ioctl(self->priv->fd, JSIOCGAXMAP, self->priv->axmap);
@@ -147,13 +146,14 @@ static void instance_init(GTypeInstance* instance, gpointer g_class) {
 	self->priv = g_new0(GjsJoystickPrivate, 1);
 	self->priv->ready = FALSE;
 	self->priv->mode = GJS_MODE_MAINLOOP;
+	self->priv->fd = -1;
 }
 
 static void get_property(GObject* object, guint property_id, GValue *value, GParamSpec *pspec) {
 	GjsJoystick *self = GJS_JOYSTICK(object);
 	switch(property_id) {
 	case GJS_OPEN:
-		g_value_set_boolean(value, self->priv->fd > 0 ? TRUE : FALSE);
+		g_value_set_boolean(value, self->priv->fd >= 0 ? TRUE : FALSE);
 		break;
 	case GJS_BUTCNT:
 		g_value_set_uchar(value, self->priv->nbuts);

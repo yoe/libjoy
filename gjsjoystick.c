@@ -365,7 +365,9 @@ void gjs_joystick_iteration(GjsJoystick* self) {
 }
 
 void gjs_joystick_loop(GjsJoystick* self) {
-	/* XXX */
+	while(TRUE) {
+		gjs_joystick_iteration(self);
+	}
 }
 
 void gjs_joystick_set_mode(GjsJoystick* self, GjsMode mode) {

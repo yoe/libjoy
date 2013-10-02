@@ -336,7 +336,28 @@ GType gjs_joystick_get_type(void) {
 }
 
 void gjs_joystick_iteration(GjsJoystick* self) {
-	/* XXX */
+	struct js_event ev;
+	read(self->priv->fd, &ev, sizeof(ev));
+	/* XXX if(ev.type & JS_EVENT_INIT) */
+	ev.type &= ~JS_EVENT_INIT;
+	gchar* name = g_strdup_printf("%u", ev.number);
+	GQuark quark = g_quark_from_string(name);
+	g_free(name);
+	switch(ev.type) {
+		case JS_EVENT_BUTTON:
+			if(ev.value) {
+				g_signal_emit(self, GJS_JOYSTICK_GET_CLASS(self)->button_pressed, quark, ev.number);
+			} else {
+				g_signal_emit(self, GJS_JOYSTICK_GET_CLASS(self)->button_released, quark, ev.number);
+			}
+			break;
+		case JS_EVENT_AXIS:
+			g_signal_emit(self, GJS_JOYSTICK_GET_CLASS(self)->axis_moved, quark, ev.number, ev.value);
+			break;
+		default:
+			return;
+	}
+	return;
 }
 
 void gjs_joystick_loop(GjsJoystick* self) {

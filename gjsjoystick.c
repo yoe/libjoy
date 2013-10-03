@@ -50,6 +50,8 @@ struct _GjsJoystickPrivate {
 	uint8_t naxes;
 	GArray* butvals;
 	GArray* axvals;
+	GArray* axevts;
+	guint axintv;
 	gchar name[NAME_LEN];
 	gchar* devname;
 	GjsMode mode;
@@ -62,6 +64,7 @@ enum {
 	GJS_AXCNT,
 	GJS_NAME,
 	GJS_DEVNAME,
+	GJS_INTV,
 };
 
 GjsJoystick* gjs_joystick_open(gchar* devname) {
@@ -178,6 +181,9 @@ static void get_property(GObject* object, guint property_id, GValue *value, GPar
 	case GJS_DEVNAME:
 		g_value_set_string(value, self->priv->devname);
 		break;
+	case GJS_INTV:
+		g_value_set_uint(value, self->priv->axintv);
+		break;
 	default:
 		g_assert_not_reached();
 	}
@@ -210,6 +216,9 @@ static void set_property(GObject* object, guint property_id, const GValue *value
 	case GJS_DEVNAME:
 		self->priv->devname = g_value_dup_string(value);
 		gjs_joystick_reopen(self, NULL, NULL);
+		break;
+	case GJS_INTV:
+		self->priv->axintv = g_value_get_uint(value);
 		break;
 	default:
 		g_assert_not_reached();
@@ -315,6 +324,16 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
 	g_object_class_install_property(gobject_class,
 					GJS_DEVNAME,
 					pspec);
+	pspec = g_param_spec_uint("axis-interval",
+				 "Axis interval",
+				 "The minimum interval between two issued axis events (in milliseconds)",
+				 0,
+				 G_MAXUINT,
+				 0,
+				 G_PARAM_READWRITE);
+	g_object_class_install_property(gobject_class,
+					GJS_INTV,
+					pspec);
 }
 
 GType gjs_joystick_get_type(void) {
@@ -356,7 +375,9 @@ void gjs_joystick_iteration(GjsJoystick* self) {
 			}
 			break;
 		case JS_EVENT_AXIS:
-			g_signal_emit(self, GJS_JOYSTICK_GET_CLASS(self)->axis_moved, quark, ev.number, ev.value);
+			if(ev.time > (g_array_index(self->priv->axevts, guint32, ev.number) + self->priv->axintv)) {
+				g_signal_emit(self, GJS_JOYSTICK_GET_CLASS(self)->axis_moved, quark, ev.number, ev.value);
+			}
 			break;
 		default:
 			return;

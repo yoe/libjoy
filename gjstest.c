@@ -3,7 +3,7 @@
 
 int main(int argc, char** argv) {
 	GjsJoystick* js = gjs_joystick_open("/dev/input/js0");
-	GError* err;
+	GError* err = NULL;
 
 	gtk_init(&argc, &argv);
 	GtkWidget* window = gtk_window_new(GTK_WINDOW_TOPLEVEL);

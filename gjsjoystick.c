@@ -360,7 +360,10 @@ GType gjs_joystick_get_type(void) {
 
 void gjs_joystick_iteration(GjsJoystick* self) {
 	struct js_event ev;
-	read(self->priv->fd, &ev, sizeof(ev));
+	int rv;
+	if((rv = read(self->priv->fd, &ev, sizeof(ev))) < 0) {
+		return;
+	}
 	/* XXX if(ev.type & JS_EVENT_INIT) */
 	ev.type &= ~JS_EVENT_INIT;
 	gchar* name = g_strdup_printf("%u", ev.number);

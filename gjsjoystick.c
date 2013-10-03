@@ -73,6 +73,8 @@ GjsJoystick* gjs_joystick_open(gchar* devname) {
 
 gchar** gjs_joystick_enumerate(void) {
 	/* XXX */
+
+	return NULL;
 }
 
 gchar* gjs_joystick_describe_unopened(gchar* devname, GError** err) {
@@ -417,4 +419,6 @@ GQuark gjs_get_errdomain(void) {
 
 GType gjs_error_get_type(void) {
 	/* XXX */
+
+	return -1;
 }

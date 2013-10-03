@@ -396,7 +396,7 @@ void gjs_joystick_iteration(GjsJoystick* self) {
 			}
 			break;
 		default:
-			return;
+			break;
 	}
 	return;
 }

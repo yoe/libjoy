@@ -373,6 +373,7 @@ void gjs_joystick_iteration(GjsJoystick* self) {
 	g_free(name);
 	switch(ev.type) {
 		case JS_EVENT_BUTTON:
+			g_array_index(self->priv->butvals, gboolean, ev.number) = ev.value ? TRUE : FALSE;
 			if(ev.value) {
 				g_signal_emit(self, GJS_JOYSTICK_GET_CLASS(self)->button_pressed, quark, ev.number);
 			} else {
@@ -380,6 +381,7 @@ void gjs_joystick_iteration(GjsJoystick* self) {
 			}
 			break;
 		case JS_EVENT_AXIS:
+			g_array_index(self->priv->butvals, gint16, ev.number) = ev.value;
 			if(ev.time > (g_array_index(self->priv->axevts, guint32, ev.number) + self->priv->axintv)) {
 				g_signal_emit(self, GJS_JOYSTICK_GET_CLASS(self)->axis_moved, quark, ev.number, ev.value);
 			}

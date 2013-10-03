@@ -88,6 +88,9 @@ gboolean gjs_joystick_reopen(GjsJoystick* self, gchar* devname, GError** err) {
 	self->priv->ready = FALSE;
 	if(self->priv->fd >= 0) {
 		close(self->priv->fd);
+		g_array_set_size(self->priv->butvals, 0);
+		g_array_set_size(self->priv->axvals, 0);
+		g_array_set_size(self->priv->axevts, 0);
 	}
 	if(devname) {
 		if(self->priv->devname) {
@@ -108,7 +111,10 @@ gboolean gjs_joystick_reopen(GjsJoystick* self, gchar* devname, GError** err) {
 	ioctl(self->priv->fd, JSIOCGAXMAP, self->priv->axmap);
 	ioctl(self->priv->fd, JSIOCGBTNMAP, self->priv->butmap);
 	ioctl(self->priv->fd, JSIOCGAXES, &(self->priv->naxes));
+	g_array_set_size(self->priv->axvals, self->priv->naxes);
+	g_array_set_size(self->priv->axevts, self->priv->naxes);
 	ioctl(self->priv->fd, JSIOCGBUTTONS, &(self->priv->nbuts));
+	g_array_set_size(self->priv->butvals, self->priv->nbuts);
 	ioctl(self->priv->fd, JSIOCGNAME(NAME_LEN), self->priv->name);
 	self->priv->ready = TRUE;
 	return TRUE;
@@ -163,6 +169,9 @@ static void instance_init(GTypeInstance* instance, gpointer g_class) {
 	self->priv->ready = FALSE;
 	self->priv->mode = GJS_MODE_MAINLOOP;
 	self->priv->fd = -1;
+	self->priv->butvals = g_array_new(FALSE, TRUE, sizeof(gboolean));
+	self->priv->axvals = g_array_new(FALSE, TRUE, sizeof(gint16));
+	self->priv->axevts = g_array_new(FALSE, TRUE, sizeof(guint32));
 }
 
 static void get_property(GObject* object, guint property_id, GValue *value, GParamSpec *pspec) {

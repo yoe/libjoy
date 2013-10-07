@@ -35,6 +35,8 @@ char* button_names[KEY_MAX - BTN_MISC + 1] = {
 
 typedef struct _GjsJoystickSource GjsJoystickSource;
 
+static GHashTable* object_index = NULL;
+
 struct _GjsJoystickSource {
 	GSource parent;
 	GjsJoystick* js;
@@ -68,7 +70,11 @@ enum {
 };
 
 GjsJoystick* gjs_joystick_open(gchar* devname) {
-	return GJS_JOYSTICK(g_object_new(GJS_JOYSTICK_TYPE, "devnode", devname, NULL));
+	/* TODO: canonicalize filename */
+	if(!g_hash_table_contains(object_index, devname)
+		g_hash_table_insert(object_index, devname, g_object_new(GJS_JOYSTICK_TYPE, "devnode", devname, NULL));
+	}
+	return GJS_JOYSTICK(g_hash_table_lookup(object_index, devname));
 }
 
 gchar** gjs_joystick_enumerate(void) {
@@ -255,6 +261,16 @@ static gboolean dispatch_fd(GSource* src, GSourceFunc callback, gpointer user_da
 	return TRUE;
 }
 
+static void base_init(gpointer*) {
+	g_assert(object_index == NULL);
+	object_index = g_hash_table_new(g_str_hash, g_str_equal);
+}
+
+static void base_finalize(gpointer*) {
+	g_assert(g_hash_table_size(object_index) == 0);
+	g_hash_table_destroy(objec_index);
+}
+
 static void class_init(gpointer g_class, gpointer g_class_data) {
 	GObjectClass *gobject_class = G_OBJECT_CLASS(g_class);
 	GjsJoystickClass *klass = GJS_JOYSTICK_CLASS(g_class);
@@ -355,8 +371,8 @@ GType gjs_joystick_get_type(void) {
 	if(!type) {
 		static const GTypeInfo info = {
 			sizeof(GjsJoystickClass),
-			NULL,	/* base_init */
-			NULL,	/* base_finalize */
+			base_init,	/* base_init */
+			base_finalize,	/* base_finalize */
 			class_init,	/* class_init */
 			NULL,	/* class_finalize */
 			NULL,	/* class_data */

@@ -15,10 +15,12 @@
 typedef struct _GjsJoystick GjsJoystick;
 typedef struct _GjsJoystickClass GjsJoystickClass;
 typedef struct _GjsJoystickPrivate GjsJoystickPrivate;
+typedef struct _GjsDetails GjsDetails;
 
 typedef enum {
 	GJS_ERR_DEV_NREADY,
 	GJS_ERR_NDEV,
+	GJS_ERR_NDIR,
 } GjsError;
 
 typedef enum gjs_axis_type {
@@ -115,6 +117,11 @@ struct _GjsJoystickClass {
 	guint axis_moved;
 };
 
+struct _GjsDetails {
+	gchar* devname;
+	gchar* model;
+};
+
 /* constructors & class functions */
 /** @brief Create a joystick object 
   *
@@ -129,12 +136,14 @@ struct _GjsJoystickClass {
 GjsJoystick* gjs_joystick_open(gchar* devname);
 /** @brief Enumerate all joystick device nodes on this system
   *
-  * @return an array of strings with filenames of all joystick device
-  * nodes on this system
+  * @return a GArray of GjsDetail structs.
   * @note this function assumes that all joystick device nodes are found
   * under /dev/input. This is usually correct.
+  * @see gjs_enum_free()
   */
-gchar** gjs_joystick_enumerate(void);
+GArray* gjs_joystick_enumerate(GError**);
+/** @brief Free the return value of gjs_joystick_enumerate() */
+void gjs_enum_free(GArray* value);
 /** @brief Describe a joystick without first calling gjs_joystick_open()
   *
   * @return the identity string of the joystick, or NULL in case of

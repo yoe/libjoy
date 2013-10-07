@@ -1,5 +1,6 @@
 #include <stdint.h>
 
+#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -71,16 +72,55 @@ enum {
 
 GjsJoystick* gjs_joystick_open(gchar* devname) {
 	/* TODO: canonicalize filename */
-	if(!g_hash_table_contains(object_index, devname)
+	if(!g_hash_table_contains(object_index, devname)) {
 		g_hash_table_insert(object_index, devname, g_object_new(GJS_JOYSTICK_TYPE, "devnode", devname, NULL));
 	}
 	return GJS_JOYSTICK(g_hash_table_lookup(object_index, devname));
 }
 
-gchar** gjs_joystick_enumerate(void) {
-	/* XXX */
+GArray* gjs_joystick_enumerate(GError** err) {
+	struct dirent* de;
+	DIR* d;
+	GjsDetails det;
+	GArray* arr;
 
-	return NULL;
+	d = opendir("/dev/input");
+	if(!d) {
+		g_set_error(err, GJS_ERROR_DOMAIN, GJS_ERR_NDIR, "Could not open directory /dev/input: %s", strerror(errno));
+		return NULL;
+	}
+
+	int errno_s = errno;
+	arr = g_array_new(TRUE, FALSE, sizeof(GjsDetails));
+
+	while((de = readdir(d)) != NULL) {
+		if(de->d_name[0] == 'j' && de->d_name[1] == 's') {
+			det.devname = g_strdup_printf("/dev/input/%s", de->d_name);
+			det.model = gjs_joystick_describe_unopened(det.devname, err);
+			if(!det.model) {
+				goto err_exit;
+			}
+			g_array_append_val(arr, det);
+		}
+		errno_s = errno;
+	}
+
+	if(errno_s != errno) {
+		g_set_error(err, GJS_ERROR_DOMAIN, GJS_ERR_NDIR, "Could not read directory /dev/input: %s", strerror(errno));
+err_exit:
+		g_array_free(arr, TRUE);
+		return NULL;
+	}
+	return arr;
+}
+
+void gjs_enum_free(GArray* value) {
+	for(int i=0; i<value->len; i++) {
+		GjsDetails det = g_array_index(value, GjsDetails, i);
+		g_free(det.devname);
+		g_free(det.model);
+	}
+	g_array_free(value, TRUE);
 }
 
 gchar* gjs_joystick_describe_unopened(gchar* devname, GError** err) {
@@ -261,14 +301,14 @@ static gboolean dispatch_fd(GSource* src, GSourceFunc callback, gpointer user_da
 	return TRUE;
 }
 
-static void base_init(gpointer*) {
+static void base_init(gpointer* klass G_GNUC_UNUSED) {
 	g_assert(object_index == NULL);
 	object_index = g_hash_table_new(g_str_hash, g_str_equal);
 }
 
-static void base_finalize(gpointer*) {
+static void base_finalize(gpointer* klass G_GNUC_UNUSED) {
 	g_assert(g_hash_table_size(object_index) == 0);
-	g_hash_table_destroy(objec_index);
+	g_hash_table_destroy(object_index);
 }
 
 static void class_init(gpointer g_class, gpointer g_class_data) {

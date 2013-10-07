@@ -7,7 +7,7 @@
 #define GJS_JOYSTICK(obj)		(G_TYPE_CHECK_INSTANCE_CAST((obj), GJS_JOYSTICK_TYPE, GjsJoystick))
 #define GJS_JOYSTICK_CLASS(vtable)	(G_TYPE_CHECK_CLASS_CAST((vtable), GJS_JOYSTICK_TYPE, GjsJoystickClass))
 #define GJS_IS_JOYSTICK(obj)		(G_TYPE_CHECK_INSTANCE_TYPE((obj), GJS_JOYSTICK_TYPE))
-#define GJS_IS_OBJECT_CLASS(vtable)	(G_TYPE_CHECK_CLASS_TYPE((vtable), GJS_JOYSTICK_TYPE))
+#define GJS_IS_JOYSTICK_CLASS(vtable)	(G_TYPE_CHECK_CLASS_TYPE((vtable), GJS_JOYSTICK_TYPE))
 #define GJS_JOYSTICK_GET_CLASS(inst)	(G_TYPE_INSTANCE_GET_CLASS((inst), GJS_JOYSTICK_TYPE, GjsJoystickClass))
 #define GJS_ERROR_DOMAIN		(gjs_get_errdomain())
 #define GJS_ERROR			(gjs_error_get_type())

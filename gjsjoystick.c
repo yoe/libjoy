@@ -215,6 +215,9 @@ static void finalize(GObject* object) {
 	if(self->priv->axvals) {
 		g_array_free(self->priv->axvals, TRUE);
 	}
+	if(self->priv->axevts) {
+		g_array_free(self->priv->axevts, TRUE);
+	}
 	if(self->priv->devname) {
 		g_free(self->priv->devname);
 	}

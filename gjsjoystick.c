@@ -72,8 +72,12 @@ enum {
 
 GjsJoystick* gjs_joystick_open(gchar* devname) {
 	/* TODO: canonicalize filename */
-	if(!g_hash_table_contains(object_index, devname)) {
-		g_hash_table_insert(object_index, devname, g_object_new(GJS_JOYSTICK_TYPE, "devnode", devname, NULL));
+	if(!object_index || !g_hash_table_contains(object_index, devname)) {
+		GjsJoystick* js;
+		js = g_object_new(GJS_JOYSTICK_TYPE, "devnode", devname, NULL);
+		/* It's base_init which creates our hash table, so that it
+		 * might not exist until the above returns */
+		g_hash_table_insert(object_index, devname, js);
 	}
 	return GJS_JOYSTICK(g_hash_table_lookup(object_index, devname));
 }

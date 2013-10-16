@@ -16,7 +16,9 @@ int main(int argc, char** argv) {
 	gchar* name = gjs_joystick_describe(js, &err);
 
 	if(!name) {
-		fprintf(stderr, "E: %s\n", err->message);
+		GtkWidget* errw = gtk_message_dialog_new(NULL, 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "Error opening /dev/input/js0: %s", err->message);
+		gtk_dialog_run(GTK_DIALOG(errw));
+		gtk_widget_destroy(errw);
 		return 1;
 	}
 

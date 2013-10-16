@@ -71,6 +71,8 @@ int main(int argc, char** argv) {
 
 	g_object_unref(js);
 
+	g_signal_connect_swapped(G_OBJECT(window), "destroy", gtk_main_quit, NULL);
+
 	gtk_widget_show_all(window);
 
 	gtk_main();

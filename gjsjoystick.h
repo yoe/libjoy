@@ -18,9 +18,9 @@ typedef struct _GjsJoystickPrivate GjsJoystickPrivate;
 typedef struct _GjsDetails GjsDetails;
 
 typedef enum {
-	GJS_ERR_DEV_NREADY,
-	GJS_ERR_NDEV,
-	GJS_ERR_NDIR,
+	GJS_ERR_DEV_NREADY,	/**< An operation was performed on a GjsJoystick which requires a joystick, but none was found on the provided device node */
+	GJS_ERR_NDEV,	/**< Error opening the joystick: device name not given */
+	GJS_ERR_NDIR,	/**< Error opening or reading the directory /dev/input */
 } GjsError;
 
 typedef enum gjs_axis_type {

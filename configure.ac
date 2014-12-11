@@ -2,8 +2,8 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT(libgjs, 0.1, w@uter.be)
-AC_CONFIG_SRCDIR([gjsjoystick.h])
+AC_INIT(libjoy, 0.1, w@uter.be)
+AC_CONFIG_SRCDIR([libjoy.h])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign dist-bzip2])

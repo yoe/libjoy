@@ -12,8 +12,8 @@
 #include <linux/input.h>
 #include <linux/joystick.h>
 
-#include <gjsjoystick.h>
-#include <gjs-marshallers.h>
+#include <joyjoystick.h>
+#include <joy-marshallers.h>
 
 /* These two were shamelessly stolen from jstest.c */
 char* axis_names[ABS_MAX + 1] = {
@@ -34,17 +34,17 @@ char* button_names[KEY_MAX - BTN_MISC + 1] = {
 
 #define NAME_LEN 128
 
-typedef struct _GjsJoystickSource GjsJoystickSource;
+typedef struct _JoyStickSource JoyStickSource;
 
 static GHashTable* object_index = NULL;
 
-struct _GjsJoystickSource {
+struct _JoyStickSource {
 	GSource parent;
-	GjsJoystick* js;
+	JoyStick* js;
 	gpointer tag;
 };
 
-struct _GjsJoystickPrivate {
+struct _JoyStickPrivate {
 	int fd;
 	gboolean ready;
 	uint8_t axmap[ABS_MAX + 1];
@@ -57,55 +57,55 @@ struct _GjsJoystickPrivate {
 	guint axintv;
 	gchar name[NAME_LEN];
 	gchar* devname;
-	GjsMode mode;
-	GjsJoystickSource* source;
+	JoyMode mode;
+	JoyStickSource* source;
 };
 
 enum {
-	GJS_OPEN = 1,
-	GJS_BUTCNT,
-	GJS_AXCNT,
-	GJS_NAME,
-	GJS_DEVNAME,
-	GJS_INTV,
+	JOY_OPEN = 1,
+	JOY_BUTCNT,
+	JOY_AXCNT,
+	JOY_NAME,
+	JOY_DEVNAME,
+	JOY_INTV,
 };
 
-GjsJoystick* gjs_joystick_open(gchar* devname) {
-	GjsJoystick* js;
+JoyStick* joy_stick_open(gchar* devname) {
+	JoyStick* js;
 	if(!object_index || !g_hash_table_contains(object_index, devname)) {
-		js = g_object_new(GJS_JOYSTICK_TYPE, "devnode", devname, NULL);
+		js = g_object_new(JOY_STICK_TYPE, "devnode", devname, NULL);
 		/* Since it's base_init which creates our hash table, it might
 		 * not actually exist until the above returns */
 		g_hash_table_insert(object_index, devname, js);
 	} else {
-		js = GJS_JOYSTICK(g_hash_table_lookup(object_index, devname));
+		js = JOY_STICK(g_hash_table_lookup(object_index, devname));
 		g_object_ref(G_OBJECT(js));
 	}
 	return js;
 }
 
-GArray* gjs_joystick_enumerate(GError** err) {
+GArray* joy_stick_enumerate(GError** err) {
 	struct dirent* de;
 	DIR* d;
-	GjsDetails det;
+	JoyDetails det;
 	GArray* arr;
 
 	d = opendir("/dev/input");
 	if(!d) {
-		g_set_error(err, GJS_ERROR_DOMAIN, GJS_ERR_NDIR, "Could not open directory /dev/input: %s", strerror(errno));
+		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_NDIR, "Could not open directory /dev/input: %s", strerror(errno));
 		return NULL;
 	}
 
 	int errno_s = errno;
-	arr = g_array_new(TRUE, FALSE, sizeof(GjsDetails));
+	arr = g_array_new(TRUE, FALSE, sizeof(JoyDetails));
 
 	while((de = readdir(d)) != NULL) {
 		if(de->d_name[0] == 'j' && de->d_name[1] == 's') {
 			det.devname = g_strdup_printf("/dev/input/%s", de->d_name);
-			GjsJoystick* js = gjs_joystick_open(det.devname);
-			det.model = gjs_joystick_describe(js, err);
-			det.axes = gjs_joystick_get_axis_count(js, err);
-			det.buttons = gjs_joystick_get_button_count(js, err);
+			JoyStick* js = joy_stick_open(det.devname);
+			det.model = joy_stick_describe(js, err);
+			det.axes = joy_stick_get_axis_count(js, err);
+			det.buttons = joy_stick_get_button_count(js, err);
 			if(!det.model) {
 				goto err_exit;
 			}
@@ -116,7 +116,7 @@ GArray* gjs_joystick_enumerate(GError** err) {
 	}
 
 	if(errno_s != errno) {
-		g_set_error(err, GJS_ERROR_DOMAIN, GJS_ERR_NDIR, "Could not read directory /dev/input: %s", strerror(errno));
+		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_NDIR, "Could not read directory /dev/input: %s", strerror(errno));
 err_exit:
 		g_array_free(arr, TRUE);
 		return NULL;
@@ -124,23 +124,23 @@ err_exit:
 	return arr;
 }
 
-void gjs_enum_free(GArray* value) {
+void joy_enum_free(GArray* value) {
 	for(int i=0; i<value->len; i++) {
-		GjsDetails det = g_array_index(value, GjsDetails, i);
+		JoyDetails det = g_array_index(value, JoyDetails, i);
 		g_free(det.devname);
 		g_free(det.model);
 	}
 	g_array_free(value, TRUE);
 }
 
-gchar* gjs_joystick_describe_unopened(gchar* devname, GError** err) {
-	GjsJoystick* gjs = gjs_joystick_open(devname);
-	gchar* retval = gjs_joystick_describe(gjs, err);
-	g_object_unref(gjs);
+gchar* joy_stick_describe_unopened(gchar* devname, GError** err) {
+	JoyStick* joy = joy_stick_open(devname);
+	gchar* retval = joy_stick_describe(joy, err);
+	g_object_unref(joy);
 	return retval;
 }
 
-gboolean gjs_joystick_reopen(GjsJoystick* self, gchar* devname, GError** err) {
+gboolean joy_stick_reopen(JoyStick* self, gchar* devname, GError** err) {
 	self->priv->ready = FALSE;
 	if(self->priv->fd >= 0) {
 		close(self->priv->fd);
@@ -155,13 +155,13 @@ gboolean gjs_joystick_reopen(GjsJoystick* self, gchar* devname, GError** err) {
 		self->priv->devname = g_strdup(devname);
 	}
 	if(!self->priv->devname) {
-		g_set_error(err, GJS_ERROR_DOMAIN, GJS_ERR_NDEV, "Could not open joystick: no device name provided!");
+		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_NDEV, "Could not open joystick: no device name provided!");
 		self->priv->fd = -1;
 		return FALSE;
 	}
 	self->priv->fd = open(self->priv->devname, O_RDONLY);
 	if(self->priv->fd < 0) {
-		g_set_error(err, GJS_ERROR_DOMAIN, GJS_ERR_DEV_NREADY, "Could not open %s: %s", devname, strerror(errno));
+		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_DEV_NREADY, "Could not open %s: %s", devname, strerror(errno));
 		return FALSE;
 	}
 	ioctl(self->priv->fd, JSIOCGAXMAP, self->priv->axmap);
@@ -176,54 +176,54 @@ gboolean gjs_joystick_reopen(GjsJoystick* self, gchar* devname, GError** err) {
 	return TRUE;
 }
 
-guint8 gjs_joystick_get_axis_count(GjsJoystick* self, GError** err) {
+guint8 joy_stick_get_axis_count(JoyStick* self, GError** err) {
 	if(!self->priv->ready) {
-		g_set_error(err, GJS_ERROR_DOMAIN, GJS_ERR_DEV_NREADY, "Could not get the axis count: joystick not ready yet!");
+		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_DEV_NREADY, "Could not get the axis count: joystick not ready yet!");
 		return 0;
 	}
 	return self->priv->naxes;
 }
 
-guchar gjs_joystick_get_button_count(GjsJoystick* self, GError** err) {
+guchar joy_stick_get_button_count(JoyStick* self, GError** err) {
 	if(!self->priv->ready) {
-		g_set_error(err, GJS_ERROR_DOMAIN, GJS_ERR_DEV_NREADY, "Could not get the button count: joystick not ready yet!");
+		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_DEV_NREADY, "Could not get the button count: joystick not ready yet!");
 		return 0;
 	}
 	return self->priv->nbuts;
 }
 
-gchar* gjs_joystick_describe(GjsJoystick* self, GError** err) {
+gchar* joy_stick_describe(JoyStick* self, GError** err) {
 	if(!self->priv->ready) {
-		g_set_error(err, GJS_ERROR_DOMAIN, GJS_ERR_DEV_NREADY, "Could not get the joystick name: joystick not ready yet!");
+		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_DEV_NREADY, "Could not get the joystick name: joystick not ready yet!");
 		return 0;
 	}
 	return self->priv->name;
 }
 
-gchar* gjs_joystick_describe_axis(GjsJoystick* self, guint8 axis) {
+gchar* joy_stick_describe_axis(JoyStick* self, guint8 axis) {
 	return axis_names[self->priv->axmap[axis]];
 }
 
-gchar* gjs_joystick_describe_button(GjsJoystick* self, guint8 button) {
+gchar* joy_stick_describe_button(JoyStick* self, guint8 button) {
 	g_assert(button < self->priv->nbuts);
 	return button_names[self->priv->butmap[button] - BTN_MISC];
 }
 
-enum gjs_button_type gjs_joystick_get_button_type(GjsJoystick* self, guchar button) {
+enum joy_button_type joy_stick_get_button_type(JoyStick* self, guchar button) {
 	g_assert(button < self->priv->nbuts);
-	return (enum gjs_button_type)(self->priv->butmap[button] - BTN_MISC);
+	return (enum joy_button_type)(self->priv->butmap[button] - BTN_MISC);
 }
 
-enum gjs_axis_type gjs_joystick_get_axis_type(GjsJoystick* self, guchar axis) {
-	return (enum gjs_axis_type)(self->priv->axmap[axis]);
+enum joy_axis_type joy_stick_get_axis_type(JoyStick* self, guchar axis) {
+	return (enum joy_axis_type)(self->priv->axmap[axis]);
 }
 
 static void instance_init(GTypeInstance* instance, gpointer g_class) {
-	GjsJoystick *self = GJS_JOYSTICK(instance);
+	JoyStick *self = JOY_STICK(instance);
 
-	self->priv = g_new0(GjsJoystickPrivate, 1);
+	self->priv = g_new0(JoyStickPrivate, 1);
 	self->priv->ready = FALSE;
-	self->priv->mode = GJS_MODE_MAINLOOP;
+	self->priv->mode = JOY_MODE_MAINLOOP;
 	self->priv->fd = -1;
 	self->priv->butvals = g_array_new(FALSE, TRUE, sizeof(gboolean));
 	self->priv->axvals = g_array_new(FALSE, TRUE, sizeof(gint16));
@@ -231,24 +231,24 @@ static void instance_init(GTypeInstance* instance, gpointer g_class) {
 }
 
 static void get_property(GObject* object, guint property_id, GValue *value, GParamSpec *pspec) {
-	GjsJoystick *self = GJS_JOYSTICK(object);
+	JoyStick *self = JOY_STICK(object);
 	switch(property_id) {
-	case GJS_OPEN:
+	case JOY_OPEN:
 		g_value_set_boolean(value, self->priv->fd >= 0 ? TRUE : FALSE);
 		break;
-	case GJS_BUTCNT:
+	case JOY_BUTCNT:
 		g_value_set_uchar(value, self->priv->nbuts);
 		break;
-	case GJS_AXCNT:
+	case JOY_AXCNT:
 		g_value_set_uchar(value, self->priv->naxes);
 		break;
-	case GJS_NAME:
+	case JOY_NAME:
 		g_value_set_string(value, self->priv->name);
 		break;
-	case GJS_DEVNAME:
+	case JOY_DEVNAME:
 		g_value_set_string(value, self->priv->devname);
 		break;
-	case GJS_INTV:
+	case JOY_INTV:
 		g_value_set_uint(value, self->priv->axintv);
 		break;
 	default:
@@ -257,7 +257,7 @@ static void get_property(GObject* object, guint property_id, GValue *value, GPar
 }
 
 static void finalize(GObject* object) {
-	GjsJoystick* self = GJS_JOYSTICK(object);
+	JoyStick* self = JOY_STICK(object);
 
 	if(self->priv->fd >= 0) {
 		close(self->priv->fd);
@@ -281,13 +281,13 @@ static void finalize(GObject* object) {
 }
 
 static void set_property(GObject* object, guint property_id, const GValue *value, GParamSpec *pspec) {
-	GjsJoystick *self = GJS_JOYSTICK(object);
+	JoyStick *self = JOY_STICK(object);
 	switch(property_id) {
-	case GJS_DEVNAME:
+	case JOY_DEVNAME:
 		self->priv->devname = g_value_dup_string(value);
-		gjs_joystick_reopen(self, NULL, NULL);
+		joy_stick_reopen(self, NULL, NULL);
 		break;
-	case GJS_INTV:
+	case JOY_INTV:
 		self->priv->axintv = g_value_get_uint(value);
 		break;
 	default:
@@ -296,7 +296,7 @@ static void set_property(GObject* object, guint property_id, const GValue *value
 }
 
 static gboolean check_fd(GSource* src) {
-	GjsJoystickSource* self = (GjsJoystickSource*)src;
+	JoyStickSource* self = (JoyStickSource*)src;
 	if(g_source_query_unix_fd(src, self->tag) & G_IO_IN) {
 		return TRUE;
 	}
@@ -304,9 +304,9 @@ static gboolean check_fd(GSource* src) {
 }
 
 static gboolean dispatch_fd(GSource* src, GSourceFunc callback, gpointer user_data) {
-	GjsJoystickSource* self = (GjsJoystickSource*)src;
+	JoyStickSource* self = (JoyStickSource*)src;
 	if(g_source_query_unix_fd(src, self->tag) & G_IO_IN) {
-		gjs_joystick_iteration(self->js);
+		joy_stick_iteration(self->js);
 	}
 	return TRUE;
 }
@@ -323,7 +323,7 @@ static void base_finalize(gpointer klass G_GNUC_UNUSED) {
 
 static void class_init(gpointer g_class, gpointer g_class_data) {
 	GObjectClass *gobject_class = G_OBJECT_CLASS(g_class);
-	GjsJoystickClass *klass = GJS_JOYSTICK_CLASS(g_class);
+	JoyStickClass *klass = JOY_STICK_CLASS(g_class);
 	GParamSpec *pspec;
 
 	gobject_class->get_property = get_property;
@@ -355,7 +355,7 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
 				0,
 				NULL,
 				NULL,
-				gjs_cclosure_marshal_VOID__UCHAR_INT,
+				joy_cclosure_marshal_VOID__UCHAR_INT,
 				G_TYPE_NONE,
 				2,
 				G_TYPE_UCHAR,
@@ -366,7 +366,7 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
 				     FALSE,
 				     G_PARAM_READABLE);
 	g_object_class_install_property(gobject_class,
-					GJS_OPEN,
+					JOY_OPEN,
 					pspec);
 	pspec = g_param_spec_uchar("button-count",
 				   "Button count",
@@ -376,7 +376,7 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
 				   0,
 				   G_PARAM_READABLE);
 	g_object_class_install_property(gobject_class,
-					GJS_BUTCNT,
+					JOY_BUTCNT,
 					pspec);
 	pspec = g_param_spec_uchar("axis-count",
 				   "Axis count",
@@ -386,7 +386,7 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
 				   0,
 				   G_PARAM_READABLE);
 	g_object_class_install_property(gobject_class,
-					GJS_AXCNT,
+					JOY_AXCNT,
 					pspec);
 	pspec = g_param_spec_string("name",
 				    "name",
@@ -394,7 +394,7 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
 				    "",
 				    G_PARAM_READABLE);
 	g_object_class_install_property(gobject_class,
-					GJS_NAME,
+					JOY_NAME,
 					pspec);
 	pspec = g_param_spec_string("devnode",
 				    "device-node",
@@ -402,7 +402,7 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
 				    "/dev/input/js0",
 				    G_PARAM_READWRITE | G_PARAM_CONSTRUCT);
 	g_object_class_install_property(gobject_class,
-					GJS_DEVNAME,
+					JOY_DEVNAME,
 					pspec);
 	pspec = g_param_spec_uint("axis-interval",
 				 "Axis interval",
@@ -412,33 +412,33 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
 				 0,
 				 G_PARAM_READWRITE);
 	g_object_class_install_property(gobject_class,
-					GJS_INTV,
+					JOY_INTV,
 					pspec);
 }
 
-GType gjs_joystick_get_type(void) {
+GType joy_stick_get_type(void) {
 	static GType type = 0;
 	if(!type) {
 		static const GTypeInfo info = {
-			sizeof(GjsJoystickClass),
+			sizeof(JoyStickClass),
 			base_init,	/* base_init */
 			base_finalize,	/* base_finalize */
 			class_init,	/* class_init */
 			NULL,	/* class_finalize */
 			NULL,	/* class_data */
-			sizeof(GjsJoystick),
+			sizeof(JoyStick),
 			0,	/* n_preallocs */
 			instance_init,
 		};
 		type = g_type_register_static(G_TYPE_OBJECT,
-					      "GjsJoystickType",
+					      "JoyStickType",
 					      &info, 0);
 	}
 
 	return type;
 }
 
-void gjs_joystick_iteration(GjsJoystick* self) {
+void joy_stick_iteration(JoyStick* self) {
 	struct js_event ev;
 	int rv;
 	if((rv = read(self->priv->fd, &ev, sizeof(ev))) < 0) {
@@ -453,15 +453,15 @@ void gjs_joystick_iteration(GjsJoystick* self) {
 		case JS_EVENT_BUTTON:
 			g_array_index(self->priv->butvals, gboolean, ev.number) = ev.value ? TRUE : FALSE;
 			if(ev.value) {
-				g_signal_emit(self, GJS_JOYSTICK_GET_CLASS(self)->button_pressed, quark, ev.number);
+				g_signal_emit(self, JOY_STICK_GET_CLASS(self)->button_pressed, quark, ev.number);
 			} else {
-				g_signal_emit(self, GJS_JOYSTICK_GET_CLASS(self)->button_released, quark, ev.number);
+				g_signal_emit(self, JOY_STICK_GET_CLASS(self)->button_released, quark, ev.number);
 			}
 			break;
 		case JS_EVENT_AXIS:
 			g_array_index(self->priv->butvals, gint16, ev.number) = ev.value;
 			if(ev.time > (g_array_index(self->priv->axevts, guint32, ev.number) + self->priv->axintv)) {
-				g_signal_emit(self, GJS_JOYSTICK_GET_CLASS(self)->axis_moved, quark, ev.number, ev.value);
+				g_signal_emit(self, JOY_STICK_GET_CLASS(self)->axis_moved, quark, ev.number, ev.value);
 			}
 			break;
 		default:
@@ -470,22 +470,22 @@ void gjs_joystick_iteration(GjsJoystick* self) {
 	return;
 }
 
-void gjs_joystick_loop(GjsJoystick* self) {
+void joy_stick_loop(JoyStick* self) {
 	while(TRUE) {
-		gjs_joystick_iteration(self);
+		joy_stick_iteration(self);
 	}
 }
 
-void gjs_joystick_set_mode(GjsJoystick* self, GjsMode mode) {
+void joy_stick_set_mode(JoyStick* self, JoyMode mode) {
 	if(self->priv->mode != mode) {
-		if(mode == GJS_MODE_MANUAL) {
+		if(mode == JOY_MODE_MANUAL) {
 			g_source_remove(g_source_get_id((GSource*)self->priv->source));
 		} else {
 			GSourceFuncs fncs;
 			memset(&fncs, 0, sizeof(GSourceFuncs));
 			fncs.check = check_fd;
 			fncs.dispatch = dispatch_fd;
-			self->priv->source = (GjsJoystickSource*)g_source_new(&fncs, sizeof(GjsJoystickSource));
+			self->priv->source = (JoyStickSource*)g_source_new(&fncs, sizeof(JoyStickSource));
 			self->priv->source->tag = g_source_add_unix_fd((GSource*)self->priv->source, self->priv->fd, G_IO_IN | G_IO_ERR | G_IO_HUP);
 			g_source_attach((GSource*)self->priv->source, NULL);
 		}
@@ -493,11 +493,11 @@ void gjs_joystick_set_mode(GjsJoystick* self, GjsMode mode) {
 	}
 }
 
-GQuark gjs_get_errdomain(void) {
-	return g_quark_from_string("Gjs");
+GQuark joy_get_errdomain(void) {
+	return g_quark_from_string("Joy");
 }
 
-GType gjs_error_get_type(void) {
+GType joy_error_get_type(void) {
 	/* XXX */
 
 	return -1;

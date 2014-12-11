@@ -71,15 +71,17 @@ enum {
 };
 
 GjsJoystick* gjs_joystick_open(gchar* devname) {
-	/* TODO: canonicalize filename */
+	GjsJoystick* js;
 	if(!object_index || !g_hash_table_contains(object_index, devname)) {
-		GjsJoystick* js;
 		js = g_object_new(GJS_JOYSTICK_TYPE, "devnode", devname, NULL);
-		/* It's base_init which creates our hash table, so that it
-		 * might not exist until the above returns */
+		/* Since it's base_init which creates our hash table, it might
+		 * not actually exist until the above returns */
 		g_hash_table_insert(object_index, devname, js);
+	} else {
+		js = GJS_JOYSTICK(g_hash_table_lookup(object_index, devname));
+		g_object_ref(G_OBJECT(js));
 	}
-	return GJS_JOYSTICK(g_hash_table_lookup(object_index, devname));
+	return js;
 }
 
 GArray* gjs_joystick_enumerate(GError** err) {
@@ -100,11 +102,15 @@ GArray* gjs_joystick_enumerate(GError** err) {
 	while((de = readdir(d)) != NULL) {
 		if(de->d_name[0] == 'j' && de->d_name[1] == 's') {
 			det.devname = g_strdup_printf("/dev/input/%s", de->d_name);
-			det.model = gjs_joystick_describe_unopened(det.devname, err);
+			GjsJoystick* js = gjs_joystick_open(det.devname);
+			det.model = gjs_joystick_describe(js, err);
+			det.axes = gjs_joystick_get_axis_count(js, err);
+			det.buttons = gjs_joystick_get_button_count(js, err);
 			if(!det.model) {
 				goto err_exit;
 			}
 			g_array_append_val(arr, det);
+			g_object_unref(G_OBJECT(js));
 		}
 		errno_s = errno;
 	}
@@ -153,7 +159,7 @@ gboolean gjs_joystick_reopen(GjsJoystick* self, gchar* devname, GError** err) {
 		self->priv->fd = -1;
 		return FALSE;
 	}
-	self->priv->fd = open(self->priv->devname, O_RDWR);
+	self->priv->fd = open(self->priv->devname, O_RDONLY);
 	if(self->priv->fd < 0) {
 		g_set_error(err, GJS_ERROR_DOMAIN, GJS_ERR_DEV_NREADY, "Could not open %s: %s", devname, strerror(errno));
 		return FALSE;
@@ -305,12 +311,12 @@ static gboolean dispatch_fd(GSource* src, GSourceFunc callback, gpointer user_da
 	return TRUE;
 }
 
-static void base_init(gpointer* klass G_GNUC_UNUSED) {
+static void base_init(gpointer klass G_GNUC_UNUSED) {
 	g_assert(object_index == NULL);
 	object_index = g_hash_table_new(g_str_hash, g_str_equal);
 }
 
-static void base_finalize(gpointer* klass G_GNUC_UNUSED) {
+static void base_finalize(gpointer klass G_GNUC_UNUSED) {
 	g_assert(g_hash_table_size(object_index) == 0);
 	g_hash_table_destroy(object_index);
 }

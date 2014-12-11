@@ -21,6 +21,7 @@ typedef enum {
 	GJS_ERR_DEV_NREADY,	/**< An operation was performed on a GjsJoystick which requires a joystick, but none was found on the provided device node */
 	GJS_ERR_NDEV,	/**< Error opening the joystick: device name not given */
 	GJS_ERR_NDIR,	/**< Error opening or reading the directory /dev/input */
+	GJS_ERR_NJS,	/**< No joysticks were found (for "enumerate" style functions) */
 } GjsError;
 
 typedef enum gjs_axis_type {
@@ -120,6 +121,8 @@ struct _GjsJoystickClass {
 struct _GjsDetails {
 	gchar* devname;
 	gchar* model;
+	guchar axes;
+	guchar buttons;
 };
 
 /* constructors & class functions */
@@ -138,7 +141,9 @@ GjsJoystick* gjs_joystick_open(gchar* devname);
   *
   * @return a GArray of GjsDetail structs.
   * @note this function assumes that all joystick device nodes are found
-  * under /dev/input. This is usually correct.
+  * under /dev/input. This is usually correct, except if you do weird
+  * things with udev or use static device nodes. In that case, please
+  * use gjs_joystick_open() directly.
   * @see gjs_enum_free()
   */
 GArray* gjs_joystick_enumerate(GError**);

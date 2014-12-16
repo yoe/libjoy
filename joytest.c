@@ -1,102 +1,111 @@
-#include <gjsjoystick.h>
-#include <gjsjoystick-gtk.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include <gtk/gtk.h>
 
-void row_activated(GtkTreeView* view, GtkTreePath* path, GtkTreeViewColumn* col, gpointer data) {
-	
+#include <libjoy.h>
+#include <libjoy-gtk.h>
+#include "joytest-iface.h"
+
+#ifndef _
+#define _(s) (s)
+#endif
+
+JoyStick* active;
+
+gulong button_p_handler;
+gulong button_r_handler;
+gulong axis_handler;
+
+static void button_pressed(JoyStick* stick, guchar butnum) {
+	printf("button %d pressed\n", butnum);
+}
+
+static void button_released(JoyStick* stick, guchar butnum) {
+	printf("button %d released\n", butnum);
+}
+
+static void axis_moved(JoyStick* stick, guchar axis, int newval) {
+	printf("axis %d moved to %d\n", axis, newval);
+}
+
+void tree_selection_changed(GtkTreeSelection* sel, gpointer data) {
+	GtkTreeIter iter;
+	GtkTreeModel *model;
+	GtkBuilder *builder = GTK_BUILDER(data);
+
+	if(gtk_tree_selection_get_selected(sel, &model, &iter)) {
+		if(button_p_handler) {
+			g_signal_handler_disconnect(active, button_p_handler);
+		}
+		if(button_r_handler) {
+			g_signal_handler_disconnect(active, button_r_handler);
+		}
+		if(axis_handler) {
+			g_signal_handler_disconnect(active, axis_handler);
+		}
+		gtk_tree_model_get(model, &iter, JOY_COLUMN_OBJECT, &active, -1);
+
+		GtkWidget *widget = GTK_WIDGET(gtk_builder_get_object(builder, "namelabel"));
+		gchar* labeltext = g_strdup_printf("%s on %s", joy_stick_describe(active, NULL), joy_stick_get_devnode(active, NULL));
+		gtk_label_set_text(GTK_LABEL(widget), labeltext);
+
+		widget = GTK_WIDGET(gtk_builder_get_object(builder, "buttonslabel"));
+		labeltext = g_strdup_printf("%d", joy_stick_get_button_count(active, NULL));
+		gtk_label_set_text(GTK_LABEL(widget), labeltext);
+		g_free(labeltext);
+
+		widget = GTK_WIDGET(gtk_builder_get_object(builder, "axeslabel"));
+		labeltext = g_strdup_printf("%d", joy_stick_get_axis_count(active, NULL));
+		gtk_label_set_text(GTK_LABEL(widget), labeltext);
+		g_free(labeltext);
+		button_p_handler = g_signal_connect(G_OBJECT(active), "button-pressed", G_CALLBACK(button_pressed), NULL);
+		button_r_handler = g_signal_connect(G_OBJECT(active), "button-released", G_CALLBACK(button_released), NULL);
+		axis_handler = g_signal_connect(G_OBJECT(active), "axis-moved", G_CALLBACK(axis_moved), NULL);
+	}
 }
 
 int main(int argc, char** argv) {
-	GjsJoystick* js = gjs_joystick_open("/dev/input/js0");
+	GtkBuilder *builder;
+	GtkWidget *window, *treeview;
+	GtkTreeModel *model;
+	GtkCellRenderer *trenderer, *irenderer;
+	GtkTreeViewColumn *col;
+	GtkTreeSelection *select;
 	GError* err = NULL;
-	GtkTreeModel* model;
 
 	gtk_init(&argc, &argv);
 
-	/* Create main window */
-	GtkWidget* window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	gtk_window_set_title(GTK_WINDOW(window), "Joystick tester tool");
+	builder = gtk_builder_new();
+	gtk_builder_add_from_string(builder, JOYTEST_IFACE, strlen(JOYTEST_IFACE), NULL);
+	window = GTK_WIDGET(gtk_builder_get_object(builder, "mainwin"));
 
-	model = gjs_joystick_enumerate_model(NULL);
-
-	/* Create paned and tree view */
-	GtkWidget* paned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
-	GtkWidget* tv = gtk_tree_view_new_with_model(model);
-	gtk_widget_set_size_request(GTK_WIDGET(tv), 100, -1);
-
-	gtk_paned_add1(GTK_PANED(paned), tv);
-
-	/* Create table layout, to contain joystick information */
-	GtkWidget* layout = gtk_table_new(3, 2, FALSE);
-
-	GtkWidget* label = gtk_label_new("Joystick on /dev/input/js0:");
-	gtk_paned_add2(GTK_PANED(paned), layout);
-
-	gtk_table_attach_defaults(GTK_TABLE(layout), label, 0, 1, 0, 1);
-
-	gchar* name = gjs_joystick_describe(js, &err);
-
-	if(!name) {
-		GtkWidget* errw = gtk_message_dialog_new(NULL, 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "Error opening /dev/input/js0: %s", err->message);
-		gtk_dialog_run(GTK_DIALOG(errw));
-		gtk_widget_destroy(errw);
-		return 1;
+	treeview = GTK_WIDGET(gtk_builder_get_object(builder, "joyview"));
+	model = joy_stick_enumerate_model(&err);
+	if(!model) {
+		g_critical("Could not search for joysticks: %s", err->message);
+		exit(EXIT_FAILURE);
 	}
 
-	label = gtk_label_new(name);
-	gtk_table_attach_defaults(GTK_TABLE(layout), label, 1, 2, 0, 1);
+	gtk_tree_view_set_model(GTK_TREE_VIEW(treeview), model);
 
-	label = gtk_label_new("Number of axes:");
-	gtk_table_attach_defaults(GTK_TABLE(layout), label, 0, 1, 1, 2);
+	trenderer = gtk_cell_renderer_text_new();
+	col = gtk_tree_view_column_new_with_attributes(_("Name"), trenderer, "text", JOY_COLUMN_NAME, NULL);
+	gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), col);
 
-	guint axes = gjs_joystick_get_axis_count(js, NULL);
-	guint buttons = gjs_joystick_get_button_count(js, NULL);
+	irenderer = gtk_cell_renderer_text_new();
+	g_object_set(G_OBJECT(irenderer), "xalign", 1.0, NULL);
+	col = gtk_tree_view_column_new_with_attributes(_("Axes"), irenderer, "text", JOY_COLUMN_AXES, NULL);
+	gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), col);
 
-	gchar* axstr = g_strdup_printf("%d", axes);
-	label = gtk_label_new(axstr);
-	g_free(axstr);
-	gtk_table_attach_defaults(GTK_TABLE(layout), label, 1, 2, 1, 2);
+	col = gtk_tree_view_column_new_with_attributes(_("Buttons"), irenderer, "text", JOY_COLUMN_BUTTONS, NULL);
+	gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), col);
 
-	label = gtk_label_new("Number of buttons:");
-	gtk_table_attach_defaults(GTK_TABLE(layout), label, 0, 1, 2, 3);
+	select = gtk_tree_view_get_selection(GTK_TREE_VIEW(treeview));
+	g_signal_connect(G_OBJECT(select), "changed", G_CALLBACK(tree_selection_changed), builder);
 
-	gchar* butstr = g_strdup_printf("%d", buttons);
-	label = gtk_label_new(butstr);
-	g_free(butstr);
-	gtk_table_attach_defaults(GTK_TABLE(layout), label, 1, 2, 2, 3);
-
-	gtk_container_add(GTK_CONTAINER(window), paned);
-
-	guchar i;
-
-	guint size = 3;
-
-	for(i=0; i<axes; i++) {
-		gtk_table_resize(GTK_TABLE(layout), ++size, 2);
-		axstr = g_strdup_printf("Axis %u:", i);
-		label = gtk_label_new(axstr);
-		g_free(axstr);
-		gtk_table_attach_defaults(GTK_TABLE(layout), label, 0, 1, size, size+1);
-		label = gtk_label_new(gjs_joystick_describe_axis(js, i));
-		gtk_table_attach_defaults(GTK_TABLE(layout), label, 1, 2, size, size+1);
-	}
-	for(i=0; i<buttons; i++) {
-		gtk_table_resize(GTK_TABLE(layout), ++size, 2);
-		butstr = g_strdup_printf("Button %u:", i);
-		label = gtk_label_new(butstr);
-		g_free(butstr);
-		gtk_table_attach_defaults(GTK_TABLE(layout), label, 0, 1, size, size+1);
-		label = gtk_label_new(gjs_joystick_describe_button(js, i));
-		gtk_table_attach_defaults(GTK_TABLE(layout), label, 1, 2, size, size+1);
-	}
-
-	g_object_unref(js);
-
-	g_signal_connect_swapped(G_OBJECT(window), "destroy", gtk_main_quit, NULL);
+	g_signal_connect(G_OBJECT(window), "delete-event", gtk_main_quit, NULL);
 
 	gtk_widget_show_all(window);
-
 	gtk_main();
-
-	return 0;
 }

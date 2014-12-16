@@ -15,12 +15,11 @@
 typedef struct _JoyStick JoyStick;
 typedef struct _JoyStickClass JoyStickClass;
 typedef struct _JoyStickPrivate JoyStickPrivate;
-typedef struct _JoyDetails JoyDetails;
 
 typedef enum {
 	JOY_ERR_DEV_NREADY,	/**< An operation was performed on a JoyStick which requires a joystick, but none was found on the provided device node */
 	JOY_ERR_NDEV,	/**< Error opening the joystick: device name not given */
-	JOY_ERR_NDIR,	/**< Error opening or reading the directory /dev/input */
+	JOY_ERR_UDEV,	/**< Error while dealing with udev */
 	JOY_ERR_NJS,	/**< No joysticks were found (for "enumerate" style functions) */
 } JoyError;
 
@@ -119,13 +118,6 @@ struct _JoyStickClass {
 	guint axis_moved;
 };
 
-struct _JoyDetails {
-	gchar* devname;
-	gchar* model;
-	guchar axes;
-	guchar buttons;
-};
-
 /* constructors & class functions */
 /** @brief Create a joystick object 
   *
@@ -137,19 +129,15 @@ struct _JoyDetails {
   * any events. Use the joy_stick_is_valid() function to verify that
   * it can do anything useful.
   */
-JoyStick* joy_stick_open(gchar* devname);
+JoyStick* joy_stick_open(const gchar* devname);
 /** @brief Enumerate all joystick device nodes on this system
   *
-  * @return a GArray of JoyDetail structs.
-  * @note this function assumes that all joystick device nodes are found
-  * under /dev/input. This is usually correct, except if you do weird
-  * things with udev or use static device nodes. In that case, please
-  * use joy_stick_open() directly.
+  * @return a GList of JoyStick objects.
   * @see joy_enum_free()
   */
-GArray* joy_stick_enumerate(GError**);
+GList* joy_stick_enumerate(GError**);
 /** @brief Free the return value of joy_stick_enumerate() */
-void joy_enum_free(GArray* value);
+void joy_enum_free(GArray* enumeration);
 /** @brief Describe a joystick without first calling joy_stick_open()
   *
   * @return the identity string of the joystick, or NULL in case of
@@ -163,8 +151,9 @@ void joy_enum_free(GArray* value);
   * issues)
   */
 gchar* joy_stick_describe_unopened(gchar* devname, GError** err);
-
 /* instance functions */
+/** @brief Returns the devnode for a joystick */
+gchar* joy_stick_get_devnode(JoyStick*, GError** err);
 /** @brief Get the number of axes on this joystick
   *
   * @return the number of axes found on the given joystick, or 0 in
@@ -244,21 +233,6 @@ JoyBtnType joy_stick_get_button_type(JoyStick*, guchar button);
   * @see joy_stick_describe_axis
   */
 JoyAxisType joy_stick_get_axis_type(JoyStick*, guchar axis);
-/** @brief try to reopen the joystick
-  *
-  * If the joystick is unplugged from the system, the JoyStick will
-  * enter an "invalid" state, and stop issueing events. When that
-  * happens, this function can be called to reconnect the joystick.
-  *
-  * Additionally, this function may be used to switch the JoyStick to
-  * another joystick device node.
-  *
-  * @param devname the new device name of the joystick. If NULL, the
-  * device name chosen at construction time is reused.
-  * @return TRUE if the joystick was successfully connected, FALSE
-  * otherwise (with err set appropriately).
-  */
-gboolean joy_stick_reopen(JoyStick*, gchar* devname, GError** err);
 /** @brief Select the mode in which to issue events
   *
   * @param mode the new mode.

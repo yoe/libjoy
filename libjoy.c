@@ -1,6 +1,5 @@
 #include <stdint.h>
 
-#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -12,7 +11,11 @@
 #include <linux/input.h>
 #include <linux/joystick.h>
 
-#include <joyjoystick.h>
+#include <libudev.h>
+
+#include <glib-unix.h>
+
+#include <libjoy.h>
 #include <joy-marshallers.h>
 
 /* These two were shamelessly stolen from jstest.c */
@@ -34,15 +37,7 @@ char* button_names[KEY_MAX - BTN_MISC + 1] = {
 
 #define NAME_LEN 128
 
-typedef struct _JoyStickSource JoyStickSource;
-
 static GHashTable* object_index = NULL;
-
-struct _JoyStickSource {
-	GSource parent;
-	JoyStick* js;
-	gpointer tag;
-};
 
 struct _JoyStickPrivate {
 	int fd;
@@ -58,7 +53,7 @@ struct _JoyStickPrivate {
 	gchar name[NAME_LEN];
 	gchar* devname;
 	JoyMode mode;
-	JoyStickSource* source;
+	guint watch;
 };
 
 enum {
@@ -70,13 +65,13 @@ enum {
 	JOY_INTV,
 };
 
-JoyStick* joy_stick_open(gchar* devname) {
+JoyStick* joy_stick_open(const gchar* devname) {
 	JoyStick* js;
 	if(!object_index || !g_hash_table_contains(object_index, devname)) {
 		js = g_object_new(JOY_STICK_TYPE, "devnode", devname, NULL);
 		/* Since it's base_init which creates our hash table, it might
 		 * not actually exist until the above returns */
-		g_hash_table_insert(object_index, devname, js);
+		g_hash_table_insert(object_index, (gchar*)devname, js);
 	} else {
 		js = JOY_STICK(g_hash_table_lookup(object_index, devname));
 		g_object_ref(G_OBJECT(js));
@@ -84,53 +79,42 @@ JoyStick* joy_stick_open(gchar* devname) {
 	return js;
 }
 
-GArray* joy_stick_enumerate(GError** err) {
-	struct dirent* de;
-	DIR* d;
-	JoyDetails det;
-	GArray* arr;
-
-	d = opendir("/dev/input");
-	if(!d) {
-		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_NDIR, "Could not open directory /dev/input: %s", strerror(errno));
-		return NULL;
+void joy_enum_free(GArray* enumeration) {
+	for(int i=0; i<enumeration->len; i++) {
+		g_object_unref(g_array_index(enumeration, JoyStick*, i));
 	}
-
-	int errno_s = errno;
-	arr = g_array_new(TRUE, FALSE, sizeof(JoyDetails));
-
-	while((de = readdir(d)) != NULL) {
-		if(de->d_name[0] == 'j' && de->d_name[1] == 's') {
-			det.devname = g_strdup_printf("/dev/input/%s", de->d_name);
-			JoyStick* js = joy_stick_open(det.devname);
-			det.model = joy_stick_describe(js, err);
-			det.axes = joy_stick_get_axis_count(js, err);
-			det.buttons = joy_stick_get_button_count(js, err);
-			if(!det.model) {
-				goto err_exit;
-			}
-			g_array_append_val(arr, det);
-			g_object_unref(G_OBJECT(js));
-		}
-		errno_s = errno;
-	}
-
-	if(errno_s != errno) {
-		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_NDIR, "Could not read directory /dev/input: %s", strerror(errno));
-err_exit:
-		g_array_free(arr, TRUE);
-		return NULL;
-	}
-	return arr;
+	g_array_free(enumeration, TRUE);
 }
 
-void joy_enum_free(GArray* value) {
-	for(int i=0; i<value->len; i++) {
-		JoyDetails det = g_array_index(value, JoyDetails, i);
-		g_free(det.devname);
-		g_free(det.model);
+GList* joy_stick_enumerate(GError** err) {
+	GList* retval = NULL;
+	struct udev* udev;
+	struct udev_enumerate *enumer;
+	struct udev_list_entry *devices, *dev_list_entry;
+	struct udev_device *dev;
+	JoyStick *joy;
+
+	udev = udev_new();
+	if(!udev) {
+		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_UDEV, "Could not initialize udev");
+		return NULL;
 	}
-	g_array_free(value, TRUE);
+
+	enumer = udev_enumerate_new(udev);
+	udev_enumerate_add_match_subsystem(enumer, "input");
+	udev_enumerate_scan_devices(enumer);
+	devices = udev_enumerate_get_list_entry(enumer);
+	udev_list_entry_foreach(dev_list_entry, devices) {
+		const char* path = udev_list_entry_get_name(dev_list_entry);
+		dev = udev_device_new_from_syspath(udev, path);
+		const char* name = udev_device_get_sysname(dev);
+		char* devnode = g_strdup(udev_device_get_devnode(dev));
+		if(name[0] == 'j' && name[1] == 's') {
+			joy = joy_stick_open(devnode);
+			retval = g_list_append(retval, joy);
+		}
+	}
+	return retval;
 }
 
 gchar* joy_stick_describe_unopened(gchar* devname, GError** err) {
@@ -140,7 +124,15 @@ gchar* joy_stick_describe_unopened(gchar* devname, GError** err) {
 	return retval;
 }
 
-gboolean joy_stick_reopen(JoyStick* self, gchar* devname, GError** err) {
+static gboolean handle_joystick_event(gint fd, GIOCondition cond, gpointer user_data) {
+	JoyStick* self = JOY_STICK(user_data);
+	if(cond & G_IO_IN) {
+		joy_stick_iteration(self);
+	}
+	return TRUE;
+}
+
+static gboolean joy_stick_reopen(JoyStick* self, gchar* devname, GError** err) {
 	self->priv->ready = FALSE;
 	if(self->priv->fd >= 0) {
 		close(self->priv->fd);
@@ -172,6 +164,7 @@ gboolean joy_stick_reopen(JoyStick* self, gchar* devname, GError** err) {
 	ioctl(self->priv->fd, JSIOCGBUTTONS, &(self->priv->nbuts));
 	g_array_set_size(self->priv->butvals, self->priv->nbuts);
 	ioctl(self->priv->fd, JSIOCGNAME(NAME_LEN), self->priv->name);
+	self->priv->watch = g_unix_fd_add(self->priv->fd, G_IO_IN | G_IO_ERR | G_IO_HUP, handle_joystick_event, self);
 	self->priv->ready = TRUE;
 	return TRUE;
 }
@@ -198,6 +191,10 @@ gchar* joy_stick_describe(JoyStick* self, GError** err) {
 		return 0;
 	}
 	return self->priv->name;
+}
+
+gchar* joy_stick_get_devnode(JoyStick* self, GError** err) {
+	return self->priv->devname;
 }
 
 gchar* joy_stick_describe_axis(JoyStick* self, guint8 axis) {
@@ -262,8 +259,8 @@ static void finalize(GObject* object) {
 	if(self->priv->fd >= 0) {
 		close(self->priv->fd);
 	}
-	if(self->priv->source) {
-		g_source_remove(g_source_get_id((GSource*)(self->priv->source)));
+	if(self->priv->watch) {
+		g_source_remove(self->priv->watch);
 	}
 	if(self->priv->butvals) {
 		g_array_free(self->priv->butvals, TRUE);
@@ -295,22 +292,6 @@ static void set_property(GObject* object, guint property_id, const GValue *value
 	}
 }
 
-static gboolean check_fd(GSource* src) {
-	JoyStickSource* self = (JoyStickSource*)src;
-	if(g_source_query_unix_fd(src, self->tag) & G_IO_IN) {
-		return TRUE;
-	}
-	return FALSE;
-}
-
-static gboolean dispatch_fd(GSource* src, GSourceFunc callback, gpointer user_data) {
-	JoyStickSource* self = (JoyStickSource*)src;
-	if(g_source_query_unix_fd(src, self->tag) & G_IO_IN) {
-		joy_stick_iteration(self->js);
-	}
-	return TRUE;
-}
-
 static void base_init(gpointer klass G_GNUC_UNUSED) {
 	g_assert(object_index == NULL);
 	object_index = g_hash_table_new(g_str_hash, g_str_equal);
@@ -331,7 +312,7 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
 	gobject_class->finalize = finalize;
 	klass->button_pressed = g_signal_new("button-pressed",
 				G_TYPE_FROM_CLASS(g_class),
-				G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE,
+				G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE | G_SIGNAL_DETAILED,
 				0,
 				NULL,
 				NULL,
@@ -341,7 +322,7 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
 				G_TYPE_UCHAR);
 	klass->button_released = g_signal_new("button-released",
 				G_TYPE_FROM_CLASS(g_class),
-				G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE,
+				G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE | G_SIGNAL_DETAILED,
 				0,
 				NULL,
 				NULL,
@@ -351,7 +332,7 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
 				G_TYPE_UCHAR);
 	klass->axis_moved = g_signal_new("axis-moved",
 				G_TYPE_FROM_CLASS(g_class),
-				G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE,
+				G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE | G_SIGNAL_DETAILED,
 				0,
 				NULL,
 				NULL,
@@ -479,15 +460,9 @@ void joy_stick_loop(JoyStick* self) {
 void joy_stick_set_mode(JoyStick* self, JoyMode mode) {
 	if(self->priv->mode != mode) {
 		if(mode == JOY_MODE_MANUAL) {
-			g_source_remove(g_source_get_id((GSource*)self->priv->source));
+			g_source_remove(self->priv->watch);
 		} else {
-			GSourceFuncs fncs;
-			memset(&fncs, 0, sizeof(GSourceFuncs));
-			fncs.check = check_fd;
-			fncs.dispatch = dispatch_fd;
-			self->priv->source = (JoyStickSource*)g_source_new(&fncs, sizeof(JoyStickSource));
-			self->priv->source->tag = g_source_add_unix_fd((GSource*)self->priv->source, self->priv->fd, G_IO_IN | G_IO_ERR | G_IO_HUP);
-			g_source_attach((GSource*)self->priv->source, NULL);
+			self->priv->watch = g_unix_fd_add(self->priv->fd, G_IO_IN | G_IO_ERR | G_IO_HUP, handle_joystick_event, self);
 		}
 		self->priv->mode = mode;
 	}

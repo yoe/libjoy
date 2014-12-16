@@ -15,11 +15,13 @@ AC_PROG_CC_C99
 # Checks for libraries.
 LT_INIT
 PKG_CHECK_MODULES(GOBJECT, [gobject-2.0 >= 2.36])
-AC_ARG_WITH([gtk], AS_HELP_STRING([--with-gtk], [enable the graphical joystick tester (requires Gtk+ 2 or above)]))
+AC_ARG_WITH([gtk], AS_HELP_STRING([--with-gtk], [enable the graphical joystick tester and Gtk+ helper library (requires Gtk+3)]))
 AS_IF([test "x$with_gtk" = "xyes"], [
-	PKG_CHECK_MODULES(GTK, [gtk+-2.0])
+	PKG_CHECK_MODULES(GTK, [gtk+-3.0])
 ])
 AM_CONDITIONAL([GTK_ON], [test "x$with_gtk" = "xyes"])
+
+PKG_CHECK_MODULES(UDEV, [libudev])
 
 # Checks for header files.
 

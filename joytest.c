@@ -34,6 +34,7 @@ JoyStick* active;
 gulong button_p_handler;
 gulong button_r_handler;
 gulong axis_handler;
+gulong lost_handler;
 
 static void button_pressed(JoyStick* stick, guchar butnum) {
 	g_message("button %d pressed", butnum);
@@ -45,6 +46,12 @@ static void button_released(JoyStick* stick, guchar butnum) {
 
 static void axis_moved(JoyStick* stick, guchar axis, int newval) {
 	g_message("axis %d moved to %d", axis, newval);
+}
+
+static void lost(JoyStick* stick) {
+	g_message("Joystick on %s disconnected", joy_stick_get_devnode(stick, NULL));
+	g_object_unref(G_OBJECT(stick));
+	g_message("unref'd");
 }
 
 void tree_selection_changed(GtkTreeSelection* sel, gpointer data) {
@@ -62,7 +69,15 @@ void tree_selection_changed(GtkTreeSelection* sel, gpointer data) {
 		if(axis_handler) {
 			g_signal_handler_disconnect(active, axis_handler);
 		}
+		if(lost_handler) {
+			g_signal_handler_disconnect(active, lost_handler);
+		}
+		if(active) {
+			g_object_unref(G_OBJECT(active));
+		}
 		gtk_tree_model_get(model, &iter, JOY_COLUMN_OBJECT, &active, -1);
+		g_object_ref(G_OBJECT(active));
+		g_message("Joystick \"%s\" now active", joy_stick_describe(active, NULL));
 
 		GtkWidget *widget = GTK_WIDGET(gtk_builder_get_object(builder, "namelabel"));
 		gchar* labeltext = g_strdup_printf("%s on %s", joy_stick_describe(active, NULL), joy_stick_get_devnode(active, NULL));
@@ -80,6 +95,7 @@ void tree_selection_changed(GtkTreeSelection* sel, gpointer data) {
 		button_p_handler = g_signal_connect(G_OBJECT(active), "button-pressed", G_CALLBACK(button_pressed), NULL);
 		button_r_handler = g_signal_connect(G_OBJECT(active), "button-released", G_CALLBACK(button_released), NULL);
 		axis_handler = g_signal_connect(G_OBJECT(active), "axis-moved", G_CALLBACK(axis_moved), NULL);
+		lost_handler = g_signal_connect(G_OBJECT(active), "disconnected", G_CALLBACK(lost), NULL);
 	}
 }
 

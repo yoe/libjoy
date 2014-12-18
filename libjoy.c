@@ -280,7 +280,7 @@ static void finalize(GObject* object) {
 	if(self->priv->fd >= 0) {
 		close(self->priv->fd);
 	}
-	if(self->priv->watch) {
+	if(self->priv->ready) {
 		g_source_remove(self->priv->watch);
 	}
 	if(self->priv->butvals) {

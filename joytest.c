@@ -36,15 +36,15 @@ gulong button_r_handler;
 gulong axis_handler;
 
 static void button_pressed(JoyStick* stick, guchar butnum) {
-	printf("button %d pressed\n", butnum);
+	g_message("button %d pressed", butnum);
 }
 
 static void button_released(JoyStick* stick, guchar butnum) {
-	printf("button %d released\n", butnum);
+	g_message("button %d released", butnum);
 }
 
 static void axis_moved(JoyStick* stick, guchar axis, int newval) {
-	printf("axis %d moved to %d\n", axis, newval);
+	g_message("axis %d moved to %d", axis, newval);
 }
 
 void tree_selection_changed(GtkTreeSelection* sel, gpointer data) {

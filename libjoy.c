@@ -148,7 +148,10 @@ static gboolean handle_joystick_event(gint fd, GIOCondition cond, gpointer user_
 		joy_stick_iteration(self);
 	} else {
 		g_hash_table_remove(object_index, self->priv->devname);
+		close(self->priv->fd);
 		g_signal_emit(self, JOY_STICK_GET_CLASS(self)->disconnected, 0, NULL);
+		self->priv->ready = FALSE;
+		return FALSE;
 	}
 	return TRUE;
 }

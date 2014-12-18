@@ -36,22 +36,68 @@ gulong button_r_handler;
 gulong axis_handler;
 gulong lost_handler;
 
-static void button_pressed(JoyStick* stick, guchar butnum) {
-	g_message("button %d pressed", butnum);
+static void button_pressed(JoyStick* stick, guchar butnum, gpointer data) {
+	GtkGrid* grid = GTK_GRID(data);
+
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(gtk_grid_get_child_at(grid, butnum+2, 1)), TRUE);
 }
 
-static void button_released(JoyStick* stick, guchar butnum) {
-	g_message("button %d released", butnum);
+static void button_released(JoyStick* stick, guchar butnum, gpointer data) {
+	GtkGrid* grid = GTK_GRID(data);
+
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(gtk_grid_get_child_at(grid, butnum+2, 1)), FALSE);
 }
 
-static void axis_moved(JoyStick* stick, guchar axis, int newval) {
-	g_message("axis %d moved to %d", axis, newval);
+static void axis_moved(JoyStick* stick, guchar axis, int newval, gpointer data) {
+	GtkGrid* grid = GTK_GRID(data);
+
+	gchar* val = g_strdup_printf("%d (%s): %d", axis, joy_stick_describe_axis(stick, axis), newval);
+	gtk_label_set_text(GTK_LABEL(gtk_grid_get_child_at(grid, axis+2, 2)), val);
+	g_free(val);
 }
 
 static void lost(JoyStick* stick) {
 	g_message("Joystick on %s disconnected", joy_stick_get_devnode(stick, NULL));
 	g_object_unref(G_OBJECT(stick));
 	g_message("unref'd");
+}
+
+static void set_axis_count(guchar count, GtkBuilder* builder) {
+	static guchar curcount = 0;
+	GtkGrid* grid = GTK_GRID(gtk_builder_get_object(builder, "detailsgrid"));
+
+	if(count > curcount) {
+		for(unsigned char i=curcount; i<count; i++) {
+			gtk_grid_attach(grid, gtk_label_new("0"), i+2, 2, 1, 1);
+		}
+	} else {
+		for(unsigned char i=curcount; i>count; i--) {
+			gtk_widget_destroy(gtk_grid_get_child_at(grid, i+2, 2));
+		}
+	}
+	gtk_widget_show_all(GTK_WIDGET(grid));
+	curcount = count;
+}
+
+static void set_button_count(JoyStick* stick, guchar count, GtkBuilder* builder) {
+	static guchar curcount = 0;
+	GtkGrid* grid = GTK_GRID(gtk_builder_get_object(builder, "detailsgrid"));
+
+	if(count > curcount) {
+		for(unsigned char i=curcount; i<count; i++) {
+			gchar* name = g_strdup_printf("%u (%s)", i, joy_stick_describe_button(stick, i));
+			GtkWidget* but = gtk_check_button_new_with_label(name);
+			gtk_widget_set_sensitive(but, FALSE);
+			gtk_grid_attach(grid, but, i+2, 1, 1, 1);
+			g_free(name);
+		}
+	} else {
+		for(unsigned char i=curcount; i>count; i--) {
+			gtk_widget_destroy(gtk_grid_get_child_at(grid, i+2, 1));
+		}
+	}
+	gtk_widget_show_all(GTK_WIDGET(grid));
+	curcount = count;
 }
 
 void tree_selection_changed(GtkTreeSelection* sel, gpointer data) {
@@ -83,18 +129,17 @@ void tree_selection_changed(GtkTreeSelection* sel, gpointer data) {
 		gchar* labeltext = g_strdup_printf("%s on %s", joy_stick_describe(active, NULL), joy_stick_get_devnode(active, NULL));
 		gtk_label_set_text(GTK_LABEL(widget), labeltext);
 
-		widget = GTK_WIDGET(gtk_builder_get_object(builder, "buttonslabel"));
-		labeltext = g_strdup_printf("%d", joy_stick_get_button_count(active, NULL));
-		gtk_label_set_text(GTK_LABEL(widget), labeltext);
-		g_free(labeltext);
+		guchar axes = joy_stick_get_axis_count(active, NULL);
+		guchar buttons = joy_stick_get_button_count(active, NULL);
 
-		widget = GTK_WIDGET(gtk_builder_get_object(builder, "axeslabel"));
-		labeltext = g_strdup_printf("%d", joy_stick_get_axis_count(active, NULL));
-		gtk_label_set_text(GTK_LABEL(widget), labeltext);
-		g_free(labeltext);
-		button_p_handler = g_signal_connect(G_OBJECT(active), "button-pressed", G_CALLBACK(button_pressed), NULL);
-		button_r_handler = g_signal_connect(G_OBJECT(active), "button-released", G_CALLBACK(button_released), NULL);
-		axis_handler = g_signal_connect(G_OBJECT(active), "axis-moved", G_CALLBACK(axis_moved), NULL);
+		GtkGrid* grid = GTK_GRID(gtk_builder_get_object(builder, "detailsgrid"));
+		set_axis_count(axes, builder);
+		set_button_count(active, buttons, builder);
+		gtk_container_child_set(GTK_CONTAINER(grid), widget, "width", axes > buttons ? axes : (buttons > 1 ? buttons : 1));
+
+		button_p_handler = g_signal_connect(G_OBJECT(active), "button-pressed", G_CALLBACK(button_pressed), grid);
+		button_r_handler = g_signal_connect(G_OBJECT(active), "button-released", G_CALLBACK(button_released), grid);
+		axis_handler = g_signal_connect(G_OBJECT(active), "axis-moved", G_CALLBACK(axis_moved), grid);
 		lost_handler = g_signal_connect(G_OBJECT(active), "disconnected", G_CALLBACK(lost), NULL);
 	}
 }

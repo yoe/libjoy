@@ -134,6 +134,7 @@ struct _JoyStickClass {
 	guint button_pressed;
 	guint button_released;
 	guint axis_moved;
+	guint disconnected;
 };
 
 /* constructors & class functions */

@@ -146,6 +146,9 @@ static gboolean handle_joystick_event(gint fd, GIOCondition cond, gpointer user_
 	JoyStick* self = JOY_STICK(user_data);
 	if(cond & G_IO_IN) {
 		joy_stick_iteration(self);
+	} else {
+		g_hash_table_remove(object_index, self->priv->devname);
+		g_signal_emit(self, JOY_STICK_GET_CLASS(self)->disconnected, 0, NULL);
 	}
 	return TRUE;
 }
@@ -289,6 +292,7 @@ static void finalize(GObject* object) {
 	if(self->priv->axevts) {
 		g_array_free(self->priv->axevts, TRUE);
 	}
+	g_hash_table_remove(object_index, self->priv->devname);
 	if(self->priv->devname) {
 		g_free(self->priv->devname);
 	}
@@ -359,6 +363,15 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
 				2,
 				G_TYPE_UCHAR,
 				G_TYPE_INT);
+	klass->disconnected = g_signal_new("disconnected",
+				G_TYPE_FROM_CLASS(g_class),
+				G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE,
+				0,
+				NULL,
+				NULL,
+				g_cclosure_marshal_VOID__VOID,
+				G_TYPE_NONE,
+				0);
 	pspec = g_param_spec_boolean("open",
 				     "Open",
 				     "Whether the device has been opened",

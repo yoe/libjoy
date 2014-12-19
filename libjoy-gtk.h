@@ -4,8 +4,9 @@
  * Copyright(c) Wouter Verhelst, 2014
  *
  * This library is free software; you can copy it under the terms of the
- * GNU General Public License, version 2, as published by the Free Software
- * Foundation
+ * GNU General Public License, as published by the Free Software
+ * Foundation; either version 2 of the License, or (at your option) any
+ * later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of

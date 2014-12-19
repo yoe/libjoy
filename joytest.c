@@ -51,7 +51,7 @@ static void button_released(JoyStick* stick, guchar butnum, gpointer data) {
 static void axis_moved(JoyStick* stick, guchar axis, int newval, gpointer data) {
 	GtkGrid* grid = GTK_GRID(data);
 
-	gchar* val = g_strdup_printf("%d (%s): %d", axis, joy_stick_describe_axis(stick, axis), newval);
+	gchar* val = g_strdup_printf("%d", newval);
 	gtk_label_set_text(GTK_LABEL(gtk_grid_get_child_at(grid, axis+2, 2)), val);
 	g_free(val);
 }
@@ -62,7 +62,7 @@ static void lost(JoyStick* stick) {
 	g_message("unref'd");
 }
 
-static void set_axis_count(guchar count, GtkBuilder* builder) {
+static void set_axis_count(JoyStick* stick, guchar count, GtkBuilder* builder) {
 	static guchar curcount = 0;
 	GtkGrid* grid = GTK_GRID(gtk_builder_get_object(builder, "detailsgrid"));
 
@@ -75,6 +75,11 @@ static void set_axis_count(guchar count, GtkBuilder* builder) {
 			gtk_widget_destroy(gtk_grid_get_child_at(grid, i+2, 2));
 		}
 	}
+	for(unsigned char i=0; i<count; i++) {
+		gchar* name = g_strdup_printf("Axis %u (%s)", i, joy_stick_describe_axis(stick, i));
+		gtk_widget_set_tooltip_text(gtk_grid_get_child_at(grid, i+2, 2), name);
+		g_free(name);
+	}
 	gtk_widget_show_all(GTK_WIDGET(grid));
 	curcount = count;
 }
@@ -85,16 +90,19 @@ static void set_button_count(JoyStick* stick, guchar count, GtkBuilder* builder)
 
 	if(count > curcount) {
 		for(unsigned char i=curcount; i<count; i++) {
-			gchar* name = g_strdup_printf("%u (%s)", i, joy_stick_describe_button(stick, i));
-			GtkWidget* but = gtk_check_button_new_with_label(name);
+			GtkWidget* but = gtk_check_button_new();
 			gtk_widget_set_sensitive(but, FALSE);
 			gtk_grid_attach(grid, but, i+2, 1, 1, 1);
-			g_free(name);
 		}
 	} else {
 		for(unsigned char i=curcount; i>count; i--) {
 			gtk_widget_destroy(gtk_grid_get_child_at(grid, i+2, 1));
 		}
+	}
+	for(unsigned char i=0; i<count; i++) {
+		gchar* name = g_strdup_printf("Button %u (%s)", i, joy_stick_describe_button(stick, i));
+		gtk_widget_set_tooltip_text(gtk_grid_get_child_at(grid, i+2, 1), name);
+		g_free(name);
 	}
 	gtk_widget_show_all(GTK_WIDGET(grid));
 	curcount = count;
@@ -133,7 +141,7 @@ void tree_selection_changed(GtkTreeSelection* sel, gpointer data) {
 		guchar buttons = joy_stick_get_button_count(active, NULL);
 
 		GtkGrid* grid = GTK_GRID(gtk_builder_get_object(builder, "detailsgrid"));
-		set_axis_count(axes, builder);
+		set_axis_count(active, axes, builder);
 		set_button_count(active, buttons, builder);
 		gtk_container_child_set(GTK_CONTAINER(grid), widget, "width", axes > buttons ? axes : (buttons > 1 ? buttons : 1));
 

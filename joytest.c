@@ -66,7 +66,9 @@ static void set_axis_count(JoyStick* stick, guchar count, GtkBuilder* builder) {
 
 	if(count > curcount) {
 		for(unsigned char i=curcount; i<count; i++) {
-			gtk_grid_attach(grid, gtk_label_new("0"), i+2, 2, 1, 1);
+			GtkWidget* widg = gtk_label_new("0");
+			g_object_set(G_OBJECT(widg), "xalign", 0.0, "width_chars", 6, NULL);
+			gtk_grid_attach(grid, widg, i+2, 2, 1, 1);
 		}
 	} else {
 		for(unsigned char i=curcount; i>=count; i--) {

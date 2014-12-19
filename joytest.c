@@ -71,7 +71,7 @@ static void set_axis_count(JoyStick* stick, guchar count, GtkBuilder* builder) {
 			gtk_grid_attach(grid, widg, i+2, 2, 1, 1);
 		}
 	} else {
-		for(unsigned char i=curcount; i>=count; i--) {
+		for(unsigned char i=curcount-1; i>=count; i--) {
 			gtk_widget_destroy(gtk_grid_get_child_at(grid, i+2, 2));
 		}
 	}
@@ -95,7 +95,7 @@ static void set_button_count(JoyStick* stick, guchar count, GtkBuilder* builder)
 			gtk_grid_attach(grid, but, i+2, 1, 1, 1);
 		}
 	} else {
-		for(unsigned char i=curcount; i>=count; i--) {
+		for(unsigned char i=curcount-1; i>=count; i--) {
 			gtk_widget_destroy(gtk_grid_get_child_at(grid, i+2, 1));
 		}
 	}

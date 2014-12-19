@@ -57,9 +57,7 @@ static void axis_moved(JoyStick* stick, guchar axis, int newval, gpointer data) 
 }
 
 static void lost(JoyStick* stick) {
-	g_message("Joystick on %s disconnected", joy_stick_get_devnode(stick, NULL));
 	g_object_unref(G_OBJECT(stick));
-	g_message("unref'd");
 }
 
 static void set_axis_count(JoyStick* stick, guchar count, GtkBuilder* builder) {
@@ -131,7 +129,6 @@ void tree_selection_changed(GtkTreeSelection* sel, gpointer data) {
 		}
 		gtk_tree_model_get(model, &iter, JOY_COLUMN_OBJECT, &active, -1);
 		g_object_ref(G_OBJECT(active));
-		g_message("Joystick \"%s\" now active", joy_stick_describe(active, NULL));
 
 		GtkWidget *widget = GTK_WIDGET(gtk_builder_get_object(builder, "namelabel"));
 		gchar* labeltext = g_strdup_printf("%s on %s", joy_stick_describe(active, NULL), joy_stick_get_devnode(active, NULL));

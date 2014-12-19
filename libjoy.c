@@ -157,19 +157,13 @@ static gboolean handle_joystick_event(gint fd, GIOCondition cond, gpointer user_
 	return TRUE;
 }
 
-static gboolean joy_stick_reopen(JoyStick* self, gchar* devname, GError** err) {
+static gboolean joy_stick_reopen(JoyStick* self, GError** err) {
 	self->priv->ready = FALSE;
 	if(self->priv->fd >= 0) {
 		close(self->priv->fd);
 		g_array_set_size(self->priv->butvals, 0);
 		g_array_set_size(self->priv->axvals, 0);
 		g_array_set_size(self->priv->axevts, 0);
-	}
-	if(devname) {
-		if(self->priv->devname) {
-			g_free(self->priv->devname);
-		}
-		self->priv->devname = g_strdup(devname);
 	}
 	if(!self->priv->devname) {
 		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_NDEV, "Could not open joystick: no device name provided!");
@@ -178,7 +172,7 @@ static gboolean joy_stick_reopen(JoyStick* self, gchar* devname, GError** err) {
 	}
 	self->priv->fd = open(self->priv->devname, O_RDONLY);
 	if(self->priv->fd < 0) {
-		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_DEV_NREADY, "Could not open %s: %s", devname, strerror(errno));
+		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_DEV_NREADY, "Could not open %s: %s", self->priv->devname, strerror(errno));
 		return FALSE;
 	}
 	ioctl(self->priv->fd, JSIOCGAXMAP, self->priv->axmap);
@@ -308,7 +302,7 @@ static void set_property(GObject* object, guint property_id, const GValue *value
 	switch(property_id) {
 	case JOY_DEVNAME:
 		self->priv->devname = g_value_dup_string(value);
-		joy_stick_reopen(self, NULL, NULL);
+		joy_stick_reopen(self, NULL);
 		break;
 	case JOY_INTV:
 		self->priv->axintv = g_value_get_uint(value);

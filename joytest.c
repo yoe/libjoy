@@ -140,7 +140,7 @@ void tree_selection_changed(GtkTreeSelection* sel, gpointer data) {
 		GtkGrid* grid = GTK_GRID(gtk_builder_get_object(builder, "detailsgrid"));
 		set_axis_count(active, axes, builder);
 		set_button_count(active, buttons, builder);
-		gtk_container_child_set(GTK_CONTAINER(grid), widget, "width", axes > buttons ? axes : (buttons > 1 ? buttons : 1));
+		gtk_container_child_set(GTK_CONTAINER(grid), widget, "width", axes > buttons ? axes : (buttons > 1 ? buttons : 1), NULL);
 
 		button_p_handler = g_signal_connect(G_OBJECT(active), "button-pressed", G_CALLBACK(button_pressed), grid);
 		button_r_handler = g_signal_connect(G_OBJECT(active), "button-released", G_CALLBACK(button_released), grid);

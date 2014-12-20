@@ -23,6 +23,14 @@
 
 #include <glib-unix.h>
 
+/**
+ * SECTION:joymodel
+ * @short_description: a GtkTreeModel for joysticks
+ * @see_also: #JoyStick
+ * @stability: Unstable
+ * @include: joy/joymodel.h
+ */
+
 typedef struct _JoyModelSource JoyModelSource;
 
 struct _JoyModelPrivate {
@@ -34,6 +42,17 @@ struct _JoyModelPrivate {
 
 struct udev* udev;
 
+/**
+ * joy_stick_enumerate_model:
+ * @err: a #GError
+ *
+ * Create a #JoyModel
+ *
+ * This function returns a model that will dynamically be updated as joysticks
+ * are added to and removed from the system.
+ *
+ * Returns: a #JoyModel, or NULL in case of error (with @err set appropriately)
+ */
 GtkTreeModel* joy_stick_enumerate_model(GError** err) {
 	JoyModel* mod;
 	GtkListStore* l;

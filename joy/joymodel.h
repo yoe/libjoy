@@ -23,12 +23,21 @@
 #include <joy/joystick.h>
 #include <gtk/gtk.h>
 
+/**
+ * JoyModelColumns:
+ * @JOY_COLUMN_DEV: the device node (`/dev` entry)
+ * @JOY_COLUMN_NAME: the name of the joystick (the return value of joy_stick_describe())
+ * @JOY_COLUMN_AXES: the number of axes on the joystick
+ * @JOY_COLUMN_BUTTONS: the number of buttons on the joystick
+ * @JOY_COLUMN_OBJECT: the #JoyStick object
+ */
 typedef enum joy_model_columns {
 	JOY_COLUMN_DEV,
 	JOY_COLUMN_NAME,
 	JOY_COLUMN_AXES,
 	JOY_COLUMN_BUTTONS,
 	JOY_COLUMN_OBJECT,
+	/*< private >*/
 	JOY_COLUMN_COUNT
 } JoyModelColumns;
 
@@ -45,24 +54,25 @@ typedef struct _JoyModelPrivate JoyModelPrivate;
 #define JOY_IS_MODEL_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE((klass), JOY_TYPE_MODEL))
 #define JOY_MODEL_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS((obj), JOY_TYPE_MODEL, JoyModelClass))
 
+/**
+ * JoyModel:
+ * 
+ * Opaque structure representing a #JoyModel
+ */
 struct _JoyModel {
+	/*< private >*/
 	GtkListStore parent;
 	JoyModelPrivate *priv;
 };
 
+/**
+ * JoyModelClass:
+ */
 struct _JoyModelClass {
+	/*< private >*/
 	GtkListStoreClass parent_class;
 };
 
-/**
-  * @brief Create a tree model for use in a GtkTreeView
-  *
-  * This function returns a model that will dynamically be updated as joysticks
-  * are added and removed from the system.
-  *
-  * @return a tree model ready for use a GtkTreeView, or NULL in case of
-  * error (with err set appropriately)
-  */
 GtkTreeModel* joy_stick_enumerate_model(GError** err);
 
 GType joy_model_get_type(void) G_GNUC_CONST;

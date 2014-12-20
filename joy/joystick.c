@@ -556,6 +556,7 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
   * JoyStick::axis-moved:
   * @object: the object which received the signal.
   * @axis: the number of the axis that was moved.
+  * @newval: the new value of the axis.
   *
   * The ::button-pressed signal is emitted when an axis on the
   * joystick changes its value. However, it will never be issued
@@ -621,7 +622,7 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
 /**
  * JoyStick:button-count:
  *
- * The number of buttons this joystick has
+ * The number of buttons this joystick has.
  */
 	g_object_class_install_property(gobject_class,
 					JOY_BUTCNT,
@@ -636,7 +637,7 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
 /**
  * JoyStick:axis-count:
  *
- * The number of axes this joystick has
+ * The number of axes this joystick has.
  */
 	g_object_class_install_property(gobject_class,
 					JOY_AXCNT,

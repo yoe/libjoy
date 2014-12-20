@@ -264,6 +264,8 @@ gchar* joy_stick_describe_axis(JoyStick* stick, guchar axis);
 gchar* joy_stick_describe_button(JoyStick* stick, guchar button);
 JoyBtnType joy_stick_get_button_type(JoyStick* stick, guchar button);
 JoyAxisType joy_stick_get_axis_type(JoyStick* stick, guchar axis);
+gint16 joy_stick_get_typed_axis(JoyStick* stick, JoyAxisType type, GError** err);
+gint16 joy_stick_get_typed_button(JoyStick* stick, JoyBtnType type, GError** err);
 void joy_stick_set_mode(JoyStick* stick, JoyMode mode);
 void joy_stick_iteration(JoyStick* stick);
 void joy_stick_loop(JoyStick* stick);

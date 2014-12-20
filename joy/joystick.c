@@ -783,6 +783,56 @@ void joy_stick_set_mode(JoyStick* self, JoyMode mode) {
 	}
 }
 
+/**
+  * joy_stick_get_typed_axis:
+  * @self: a #JoyStick
+  * @type: the wanted axis type
+  * @err: a #GError
+  *
+  * Check for an axis with the given type. If the joystick does not have such
+  * an axis, -1 is returned. If an error occurs, -2 is returned.
+  *
+  * Returns: the number of the axis of the given type (a number from 0 to 255),
+  * -1, or -2 (with @err set appropriately).
+  */
+gint16 joy_stick_get_typed_axis(JoyStick* self, JoyAxisType type, GError** err) {
+	if(!self->priv->ready) {
+		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_DEV_NREADY, "Could not look up axis: joystick not initialized!");
+		return -2;
+	}
+	for(int i=0; i<self->priv->naxes; i++) {
+		if((JoyAxisType)(self->priv->axmap[i]) == type) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+/**
+  * joy_stick_get_typed_button:
+  * @self: a #JoyStick
+  * @type: the wanted button type
+  * @err: a #GError
+  *
+  * Check for a button with the given type. If the joystick does not have such
+  * a button or an error occurs, -1 is returned.
+  *
+  * Returns: the number of the axis of the given type (a number from 0 to 255),
+  * or -1 (with @err set appropriately).
+  */
+gint16 joy_stick_get_typed_button(JoyStick* self, JoyBtnType type, GError** err) {
+	if(!self->priv->ready) {
+		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_DEV_NREADY, "Could not look up axis: joystick not initialized!");
+		return -2;
+	}
+	for(int i=0; i<self->priv->nbuts; i++) {
+		if((JoyBtnType)(self->priv->butmap[i]) == type) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 GQuark joy_get_errdomain(void) {
 	return g_quark_from_string("Joy");
 }

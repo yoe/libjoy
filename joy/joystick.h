@@ -142,7 +142,7 @@ struct _JoyStickClass {
 /* constructors & class functions */
 JoyStick* joy_stick_open(const gchar* devname);
 GList* joy_stick_enumerate(GError** err);
-void joy_stick_enum_free(GArray* enumeration);
+void joy_stick_enum_free(GList* enumeration);
 gchar* joy_stick_describe_unopened(gchar* devname, GError** err);
 /* instance functions */
 gchar* joy_stick_get_devnode(JoyStick* stick, GError** err);

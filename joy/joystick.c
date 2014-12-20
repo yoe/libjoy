@@ -126,14 +126,16 @@ JoyStick* joy_stick_open(const gchar* devname) {
   *
   * Free the return value of joy_stick_enumerate(). This is a
   * convenience function; it simply calls g_object_unref() on each of
-  * the elements of the array, then frees the array.
+  * the elements of the list, and frees the list nodes.
   *
   */
-void joy_stick_enum_free(GArray* enumeration) {
-	for(int i=0; i<enumeration->len; i++) {
-		g_object_unref(g_array_index(enumeration, JoyStick*, i));
+void joy_stick_enum_free(GList* enumeration) {
+	while(enumeration) {
+		g_object_unref(JOY_STICK(enumeration->data));
+		GList* next = enumeration->next;
+		g_free(enumeration);
+		enumeration = next;
 	}
-	g_array_free(enumeration, TRUE);
 }
 
 /** 

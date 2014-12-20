@@ -90,7 +90,10 @@ enum {
 	JOY_NAME,
 	JOY_DEVNAME,
 	JOY_INTV,
+	JOY_PROP_COUNT = JOY_INTV,
 };
+
+static GParamSpec *props[JOY_PROP_COUNT] = { NULL, };
 
 /** 
   * joy_stick_open:
@@ -502,7 +505,6 @@ static void base_finalize(gpointer klass G_GNUC_UNUSED) {
 static void class_init(gpointer g_class, gpointer g_class_data) {
 	GObjectClass *gobject_class = G_OBJECT_CLASS(g_class);
 	JoyStickClass *klass = JOY_STICK_CLASS(g_class);
-	GParamSpec *pspec;
 
 	gobject_class->get_property = get_property;
 	gobject_class->set_property = set_property;
@@ -519,7 +521,8 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
   * button 0 is pressed, the detailed event will be
   * ::button-pressed:0.
   */
-	klass->button_pressed = g_signal_new("button-pressed",
+	klass->button_pressed =
+	  g_signal_new("button-pressed",
 				G_TYPE_FROM_CLASS(g_class),
 				G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE | G_SIGNAL_DETAILED,
 				0,
@@ -541,7 +544,8 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
   * button 0 is released, the detailed event will be
   * ::button-released:0.
   */
-	klass->button_released = g_signal_new("button-released",
+	klass->button_released =
+	  g_signal_new("button-released",
 				G_TYPE_FROM_CLASS(g_class),
 				G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE | G_SIGNAL_DETAILED,
 				0,
@@ -566,7 +570,8 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
   * button 0 is pressed, the detailed event will be
   * ::button-pressed:0.
   */
-	klass->axis_moved = g_signal_new("axis-moved",
+	klass->axis_moved =
+	  g_signal_new("axis-moved",
 				G_TYPE_FROM_CLASS(g_class),
 				G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE | G_SIGNAL_DETAILED,
 				0,
@@ -589,7 +594,8 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
   * possibly check to see if the user wants to use another
   * joystick instead.
   */
-	klass->disconnected = g_signal_new("disconnected",
+	klass->disconnected =
+	  g_signal_new("disconnected",
 				G_TYPE_FROM_CLASS(g_class),
 				G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE,
 				0,
@@ -598,37 +604,26 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
 				g_cclosure_marshal_VOID__VOID,
 				G_TYPE_NONE,
 				0);
-	pspec = g_param_spec_boolean("open",
-				     "Open",
-				     "Whether the device has been opened",
-				     FALSE,
-				     G_PARAM_READABLE);
 /**
  * JoyStick:open:
  *
  * Whether the device is open and available for use.
  */
-	g_object_class_install_property(gobject_class,
-					JOY_OPEN,
-					pspec);
-	pspec = g_param_spec_uchar("button-count",
-				   "Button count",
-				   "The number of buttons on this joystick device",
-				   0,
-				   255,
-				   0,
-				   G_PARAM_READABLE);
+	props[JOY_OPEN] = 
+	  g_param_spec_boolean("open",
+				     "Open",
+				     "Whether the device has been opened",
+				     FALSE,
+				     G_PARAM_READABLE);
 /**
  * JoyStick:button-count:
  *
  * The number of buttons this joystick has.
  */
-	g_object_class_install_property(gobject_class,
-					JOY_BUTCNT,
-					pspec);
-	pspec = g_param_spec_uchar("axis-count",
-				   "Axis count",
-				   "The number of axes on this joystick device",
+	props[JOY_BUTCNT] = 
+	  g_param_spec_uchar("button-count",
+				   "Button count",
+				   "The number of buttons on this joystick device",
 				   0,
 				   255,
 				   0,
@@ -638,35 +633,48 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
  *
  * The number of axes this joystick has.
  */
-	g_object_class_install_property(gobject_class,
-					JOY_AXCNT,
-					pspec);
-	pspec = g_param_spec_string("name",
+	props[JOY_AXCNT] =
+	  g_param_spec_uchar("axis-count",
+				   "Axis count",
+				   "The number of axes on this joystick device",
+				   0,
+				   255,
+				   0,
+				   G_PARAM_READABLE);
+/**
+ * JoyStick:name:
+ *
+ * The name of the device (as reported by the kernel)
+ */
+	props[JOY_NAME] =
+	  g_param_spec_string("name",
 				    "name",
 				    "The name of the device (as reported by the kernel)",
 				    "",
 				    G_PARAM_READABLE);
-	g_object_class_install_property(gobject_class,
-					JOY_NAME,
-					pspec);
-	pspec = g_param_spec_string("devnode",
+/**
+ * JoyStick:devnode:
+ */
+	props[JOY_DEVNAME] =
+	  g_param_spec_string("devnode",
 				    "device-node",
 				    "The device name of this joystick",
 				    "/dev/input/js0",
 				    G_PARAM_READWRITE | G_PARAM_CONSTRUCT);
-	g_object_class_install_property(gobject_class,
-					JOY_DEVNAME,
-					pspec);
-	pspec = g_param_spec_uint("axis-interval",
+/**
+ * JoyStick:axis-interval:
+ *
+ * The minimum interval between axis events, in milliseconds.
+ */
+	props[JOY_INTV] =
+	  g_param_spec_uint("axis-interval",
 				 "Axis interval",
 				 "The minimum interval between two issued axis events (in milliseconds)",
 				 0,
 				 G_MAXUINT,
 				 0,
 				 G_PARAM_READWRITE);
-	g_object_class_install_property(gobject_class,
-					JOY_INTV,
-					pspec);
+	g_object_class_install_properties(gobject_class, JOY_PROP_COUNT, props);
 }
 
 GType joy_stick_get_type(void) {

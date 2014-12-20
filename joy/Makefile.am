@@ -1,5 +1,5 @@
 lib_LTLIBRARIES = libjoy.la
-libjoy_la_SOURCES = joy-marshallers.h joystick.c joy-marshallers.c joystick.h
+libjoy_la_SOURCES = joy-marshallers.h joy-marshallers.c joystick.h joystick.c
 pkginclude_HEADERS = joystick.h
 libjoy_la_CPPFLAGS = @CFLAGS@ @GOBJECT_CFLAGS@ @UDEV_CFLAGS@
 libjoy_la_LIBADD = @GOBJECT_LIBS@ @UDEV_LIBS@

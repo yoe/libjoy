@@ -272,4 +272,6 @@ void joy_stick_loop(JoyStick* stick);
 GType joy_stick_get_type(void) G_GNUC_PURE;
 GQuark joy_get_errdomain(void) G_GNUC_PURE;
 
+G_END_DECLS
+
 #endif // LIBJOY_H

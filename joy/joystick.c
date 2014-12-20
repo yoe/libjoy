@@ -90,7 +90,7 @@ enum {
 	JOY_NAME,
 	JOY_DEVNAME,
 	JOY_INTV,
-	JOY_PROP_COUNT = JOY_INTV,
+	JOY_PROP_COUNT,
 };
 
 static GParamSpec *props[JOY_PROP_COUNT] = { NULL, };

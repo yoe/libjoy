@@ -2,8 +2,11 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT(libjoy, 0.1, w@uter.be)
+AC_INIT(libjoy,
+	m4_esyscmd([build-aux/git-version-gen --prefix libjoy- .tarbazll-version]),
+	[w@uter.be])
 AC_CONFIG_SRCDIR([joy/joystick.h])
+AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign dist-bzip2])

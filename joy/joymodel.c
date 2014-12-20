@@ -173,7 +173,7 @@ GType joy_model_get_type(void) {
 			instance_init,
 		};
 		type = g_type_register_static(GTK_TYPE_LIST_STORE,
-					      "JoyModelType",
+					      "JoyModel",
 					      &info, 0);
 	}
 	return type;

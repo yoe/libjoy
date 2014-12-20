@@ -59,9 +59,8 @@ char* button_names[KEY_MAX - BTN_MISC + 1] = {
   * @short_description: a joystick interface
   * @see_also: #JoyModel
   * @stability: Unstable
-  * @include: libjoy.h
+  * @include: joy/joystick.h
   */
-
 
 #define NAME_LEN 128
 

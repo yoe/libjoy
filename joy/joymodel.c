@@ -18,7 +18,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 #include <string.h>
-#include <libjoy-gtk.h>
+#include <joy/joymodel.h>
 #include <libudev.h>
 
 #include <glib-unix.h>
@@ -116,7 +116,7 @@ static void instance_init(GTypeInstance* instance, gpointer g_class) {
 		G_TYPE_STRING,
 		G_TYPE_UCHAR,
 		G_TYPE_UCHAR,
-		JOY_STICK_TYPE,
+		JOY_TYPE_STICK,
 	};
 
 	gtk_list_store_set_column_types(GTK_LIST_STORE(self), JOY_COLUMN_COUNT, types);

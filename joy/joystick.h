@@ -22,17 +22,15 @@
 
 #include <glib-object.h>
 
-#define JOY_STICK_TYPE		(joy_stick_get_type())
-#define JOY_STICK(obj)		(G_TYPE_CHECK_INSTANCE_CAST((obj), JOY_STICK_TYPE, JoyStick))
-#define JOY_STICK_CLASS(vtable)	(G_TYPE_CHECK_CLASS_CAST((vtable), JOY_STICK_TYPE, JoyStickClass))
-#define JOY_IS_STICK(obj)		(G_TYPE_CHECK_INSTANCE_TYPE((obj), JOY_STICK_TYPE))
-#define JOY_IS_STICK_CLASS(vtable)	(G_TYPE_CHECK_CLASS_TYPE((vtable), JOY_STICK_TYPE))
-#define JOY_STICK_GET_CLASS(inst)	(G_TYPE_INSTANCE_GET_CLASS((inst), JOY_STICK_TYPE, JoyStickClass))
-#define JOY_ERROR_DOMAIN		(joy_get_errdomain())
+G_BEGIN_DECLS
 
-typedef struct _JoyStick JoyStick;
-typedef struct _JoyStickClass JoyStickClass;
-typedef struct _JoyStickPrivate JoyStickPrivate;
+#define JOY_TYPE_STICK		(joy_stick_get_type())
+#define JOY_STICK(obj)		(G_TYPE_CHECK_INSTANCE_CAST((obj), JOY_TYPE_STICK, JoyStick))
+#define JOY_STICK_CLASS(vtable)	(G_TYPE_CHECK_CLASS_CAST((vtable), JOY_TYPE_STICK, JoyStickClass))
+#define JOY_IS_STICK(obj)		(G_TYPE_CHECK_INSTANCE_TYPE((obj), JOY_TYPE_STICK))
+#define JOY_IS_STICK_CLASS(vtable)	(G_TYPE_CHECK_CLASS_TYPE((vtable), JOY_TYPE_STICK))
+#define JOY_STICK_GET_CLASS(inst)	(G_TYPE_INSTANCE_GET_CLASS((inst), JOY_TYPE_STICK, JoyStickClass))
+#define JOY_ERROR_DOMAIN		(joy_get_errdomain())
 
 typedef enum {
 	JOY_ERR_DEV_NREADY,	/**< An operation was performed on a JoyStick which requires a joystick, but none was found on the provided device node */
@@ -119,6 +117,10 @@ typedef enum {
 	JOY_MODE_MANUAL,
 	JOY_MODE_MAINLOOP,
 } JoyMode;
+
+typedef struct _JoyStick JoyStick;
+typedef struct _JoyStickClass JoyStickClass;
+typedef struct _JoyStickPrivate JoyStickPrivate;
 
 struct _JoyStick {
 	GObject parent;

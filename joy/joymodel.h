@@ -20,7 +20,7 @@
 #ifndef LIBJOY_GTK_H
 #define LIBJOY_GTK_H
 
-#include <libjoy.h>
+#include <joy/joystick.h>
 #include <gtk/gtk.h>
 
 typedef enum joy_model_columns {

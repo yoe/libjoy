@@ -23,8 +23,8 @@
 
 #include <gtk/gtk.h>
 
-#include <libjoy.h>
-#include <libjoy-gtk.h>
+#include <joy/joystick.h>
+#include <joy/joymodel.h>
 #include "joytest-iface.h"
 
 #ifndef _

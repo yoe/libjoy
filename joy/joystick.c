@@ -34,7 +34,7 @@
 
 #include <glib-unix.h>
 
-#include <libjoy.h>
+#include <joy/joystick.h>
 #include <joy-marshallers.h>
 
 /* These two were shamelessly stolen from jstest.c */
@@ -55,9 +55,8 @@ char* button_names[KEY_MAX - BTN_MISC + 1] = {
 };
 
 /**
-  * SECTION:libjoy
+  * SECTION:joystick
   * @short_description: a joystick interface
-  * @title: Joystick
   * @see_also: #JoyModel
   * @stability: Unstable
   * @include: libjoy.h
@@ -110,7 +109,7 @@ enum {
 JoyStick* joy_stick_open(const gchar* devname) {
 	JoyStick* js;
 	if(!object_index || !g_hash_table_contains(object_index, devname)) {
-		js = g_object_new(JOY_STICK_TYPE, "devnode", devname, NULL);
+		js = g_object_new(JOY_TYPE_STICK, "devnode", devname, NULL);
 		/* Since it's base_init which creates our hash table, it might
 		 * not actually exist until the above returns */
 		g_hash_table_insert(object_index, (gchar*)devname, js);

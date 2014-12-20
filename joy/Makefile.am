@@ -1,11 +1,11 @@
 lib_LTLIBRARIES = libjoy.la
-libjoy_la_SOURCES = joy-marshallers.h libjoy.c joy-marshallers.c libjoy.h
-pkginclude_HEADERS = libjoy.h
+libjoy_la_SOURCES = joy-marshallers.h joystick.c joy-marshallers.c joystick.h
+pkginclude_HEADERS = joystick.h
 libjoy_la_CPPFLAGS = @CFLAGS@ @GOBJECT_CFLAGS@ @UDEV_CFLAGS@
 libjoy_la_LIBADD = @GOBJECT_LIBS@ @UDEV_LIBS@
 libjoy_gtk_la_CPPFLAGS = @CFLAGS@ @GTK_CFLAGS@
 libjoy_gtk_la_LIBADD = @GTK_LIBS@
-libjoy_gtk_la_SOURCES = libjoy-gtk.c libjoy-gtk.h
+libjoy_gtk_la_SOURCES = joymodel.c joymodel.h
 EXTRA_DIST = gmarshal.list joy-marshallers.c joy-marshallers.h
 MAINTAINERCLEANFILES = joy-marshallers.h joy-marshallers.c
 joy-marshallers.c: gmarshal.list

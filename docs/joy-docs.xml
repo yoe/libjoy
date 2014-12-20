@@ -17,9 +17,9 @@
   <chapter>
     <title>libjoy</title>
         <xi:include href="xml/joy-marshallers.xml"/>
+    <xi:include href="xml/joymodel.xml"/>
+    <xi:include href="xml/joystick.xml"/>
     <xi:include href="xml/joytest-iface.xml"/>
-    <xi:include href="xml/libjoy.xml"/>
-    <xi:include href="xml/libjoy-gtk.xml"/>
 
   </chapter>
   <chapter id="object-tree">

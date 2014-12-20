@@ -32,14 +32,47 @@ G_BEGIN_DECLS
 #define JOY_STICK_GET_CLASS(inst)	(G_TYPE_INSTANCE_GET_CLASS((inst), JOY_TYPE_STICK, JoyStickClass))
 #define JOY_ERROR_DOMAIN		(joy_get_errdomain())
 
+/**
+  * JoyError:
+  * @JOY_ERR_DEV_NREADY: An operation was performed on a JoyStick which requires a joystick, but none was found on the provided device node.
+  * @JOY_ERR_NDEV: Error opening the joystick: device name not given.
+  * @JOY_ERR_UDEV: Error while dealing with udev.
+  * @JOY_ERR_NJS: No joysticks were found (for "enumerate" style functions).
+  *
+  * possible error values for libjoy
+  */
 typedef enum {
-	JOY_ERR_DEV_NREADY,	/**< An operation was performed on a JoyStick which requires a joystick, but none was found on the provided device node */
-	JOY_ERR_NDEV,	/**< Error opening the joystick: device name not given */
-	JOY_ERR_UDEV,	/**< Error while dealing with udev */
-	JOY_ERR_NJS,	/**< No joysticks were found (for "enumerate" style functions) */
+	JOY_ERR_DEV_NREADY,
+	JOY_ERR_NDEV,
+	JOY_ERR_UDEV,
+	JOY_ERR_NJS,
 } JoyError;
 
 /* The next two enums were defined based on jstest.c */
+/**
+  * JoyAxisType:
+  * @JOY_AXIS_X: X
+  * @JOY_AXIS_Y: Y
+  * @JOY_AXIS_Z: Z
+  * @JOY_AXIS_RX: RX
+  * @JOY_AXIS_RY: RY
+  * @JOY_AXIS_RZ: RZ
+  * @JOY_AXIS_THROTTLE: Throttle
+  * @JOY_AXIS_RUDDER: Rudder
+  * @JOY_AXIS_WHEEL: Wheel
+  * @JOY_AXIS_GAS: Gas
+  * @JOY_AXIS_BRAKE: Brake
+  * @JOY_AXIS_HAT0X: Hat 0, X
+  * @JOY_AXIS_HAT0Y: Hat 0, Y
+  * @JOY_AXIS_HAT1X: Hat 1, X
+  * @JOY_AXIS_HAT1Y: Hat 1, Y
+  * @JOY_AXIS_HAT2X: Hat 2, X
+  * @JOY_AXIS_HAT2Y: Hat 2, Y
+  * @JOY_AXIS_HAT3X: Hat 3, X
+  * @JOY_AXIS_HAT3Y: Hat 3, Y
+  *
+  * the type of an axis.
+  */
 typedef enum joy_axis_type {
 	JOY_AXIS_X = 0x00,
 	JOY_AXIS_Y,
@@ -62,6 +95,59 @@ typedef enum joy_axis_type {
 	JOY_AXIS_HAT3Y,
 } JoyAxisType;
 
+/**
+  * JoyBtnType:
+  * @JOY_BTN_0: 0
+  * @JOY_BTN_1: 1
+  * @JOY_BTN_2: 2
+  * @JOY_BTN_3: 3
+  * @JOY_BTN_4: 4
+  * @JOY_BTN_5: 5
+  * @JOY_BTN_6: 6
+  * @JOY_BTN_7: 7
+  * @JOY_BTN_8: 8
+  * @JOY_BTN_9: 9
+  * @JOY_BTN_LEFT: Left
+  * @JOY_BTN_RIGHT: Right
+  * @JOY_BTN_MIDDLE: Middle
+  * @JOY_BTN_SIDE: Side
+  * @JOY_BTN_EXTRA: Extra
+  * @JOY_BTN_FORWARD: Forward
+  * @JOY_BTN_BACK: Back
+  * @JOY_BTN_TASK: Task
+  * @JOY_BTN_TRIGGER: Trigger
+  * @JOY_BTN_THUMB: Thumb
+  * @JOY_BTN_THUMB2: Thumb 2
+  * @JOY_BTN_TOP: Top
+  * @JOY_BTN_TOP2: Top 2
+  * @JOY_BTN_PINKIE: Pinkie
+  * @JOY_BTN_BASE: Base
+  * @JOY_BTN_BASE2: Base 2
+  * @JOY_BTN_BASE3: Base 3
+  * @JOY_BTN_BASE4: Base 4
+  * @JOY_BTN_BASE5: Base 5
+  * @JOY_BTN_BASE6: Base 6
+  * @JOY_BTN_DEAD: Dead
+  * @JOY_BTN_A: A
+  * @JOY_BTN_B: B
+  * @JOY_BTN_C: C
+  * @JOY_BTN_X: X
+  * @JOY_BTN_Y: Y
+  * @JOY_BTN_Z: Z
+  * @JOY_BTN_TL: TL
+  * @JOY_BTN_TR: TR
+  * @JOY_BTN_TL2: TL2
+  * @JOY_BTN_TR2: TR2
+  * @JOY_BTN_SELECT: Select
+  * @JOY_BTN_START: Start
+  * @JOY_BTN_MODE: Mode
+  * @JOY_BTN_THUMB_L: Thumb L
+  * @JOY_BTN_THUMB_R: Thumb R
+  * @JOY_BTN_WHEEL: Wheel
+  * @JOY_BTN_GEAR_UP: Gear up
+  *
+  * The type of a button.
+  */
 typedef enum joy_button_type {
 	JOY_BTN_0 = 0x00,
 	JOY_BTN_1,
@@ -113,6 +199,15 @@ typedef enum joy_button_type {
 	JOY_BTN_GEAR_UP,
 } JoyBtnType;
 
+/**
+  * JoyMode:
+  * @JOY_MODE_MANUAL: libjoy will do nothing; the program must call
+  * joy_stick_iteration() or joy_stick_loop() for events to be issued.
+  * @JOY_MODE_MAINLOOP: libjoy will add a #GSource to the glib mainloop, and
+  * will issue events from that #GSource.
+  *
+  * The mode in which a joystick is running.
+  */
 typedef enum {
 	JOY_MODE_MANUAL,
 	JOY_MODE_MAINLOOP,

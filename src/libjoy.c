@@ -54,6 +54,16 @@ char* button_names[KEY_MAX - BTN_MISC + 1] = {
 "WheelBtn", "Gear up",
 };
 
+/**
+  * SECTION:libjoy
+  * @short_description: a joystick interface
+  * @title: Joystick
+  * @see_also: #JoyModel
+  * @stability: Unstable
+  * @include: libjoy.h
+  */
+
+
 #define NAME_LEN 128
 
 static GHashTable* object_index = NULL;
@@ -84,6 +94,19 @@ enum {
 	JOY_INTV,
 };
 
+/** 
+  * joy_stick_open:
+  * @devname: the device node of the joystick to open
+  * 
+  * This function creates a new #JoyStick object.
+  *
+  * Warning: this function always returns a #JoyStick; but if the
+  * device node cannot be opened for some reason, then it will not issue
+  * any events. Use the #JoyStick:open property to verify that
+  * it can do anything useful.
+  *
+  * Returns: a newly-allocated #JoyStick.
+  */
 JoyStick* joy_stick_open(const gchar* devname) {
 	JoyStick* js;
 	if(!object_index || !g_hash_table_contains(object_index, devname)) {
@@ -98,13 +121,33 @@ JoyStick* joy_stick_open(const gchar* devname) {
 	return js;
 }
 
-void joy_enum_free(GArray* enumeration) {
+/** 
+  * joy_stick_enum_free:
+  * @enumeration: the enumeration to free.
+  *
+  * Free the return value of joy_stick_enumerate(). This is a
+  * convenience function; it simply calls g_object_unref() on each of
+  * the elements of the array, then frees the array.
+  *
+  */
+void joy_stick_enum_free(GArray* enumeration) {
 	for(int i=0; i<enumeration->len; i++) {
 		g_object_unref(g_array_index(enumeration, JoyStick*, i));
 	}
 	g_array_free(enumeration, TRUE);
 }
 
+/** 
+  * joy_stick_enumerate:
+  * @err: a #GError
+  *
+  * Enumerate all joystick device nodes on this system
+  *
+  * See also joy_stick_enum_free()
+  *
+  * Returns: a #GList of #JoyStick objects, or %NULL in case of error
+  * (with @err set appropriately)
+  */
 GList* joy_stick_enumerate(GError** err) {
 	GList* retval = NULL;
 	struct udev* udev;
@@ -136,6 +179,22 @@ GList* joy_stick_enumerate(GError** err) {
 	return retval;
 }
 
+/** 
+  * joy_stick_describe_unopened:
+  * @devname: the path of the joystick device node to describe.
+  * @err: a #GError
+  *
+  * Describe a joystick without first calling joy_stick_open().
+  *
+  * Note that to get the requested information, this function will open
+  * the joystick device, perform the correct ioctl() to retrieve the
+  * requested data, and close the device again; so this function is no
+  * substitute for when joy_stick_open() followed by
+  * joy_stick_describe() fails for some reason (e.g., permission issues)
+  *
+  * Returns: the identity string of the joystick, or %NULL in case of
+  * error (with @err set appropriately)
+  */
 gchar* joy_stick_describe_unopened(gchar* devname, GError** err) {
 	JoyStick* joy = joy_stick_open(devname);
 	gchar* retval = joy_stick_describe(joy, err);
@@ -188,6 +247,16 @@ static gboolean joy_stick_reopen(JoyStick* self, GError** err) {
 	return TRUE;
 }
 
+/** 
+  * joy_stick_get_axis_count:
+  * @stick: a #JoyStick
+  * @err: a #GError
+  *
+  * Get the number of axes on this joystick
+  *
+  * Returns: the number of axes found on the given joystick, or 0 in
+  * case of error (e.g., the #JoyStick is not in a valid state).
+  */
 guint8 joy_stick_get_axis_count(JoyStick* self, GError** err) {
 	if(!self->priv->ready) {
 		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_DEV_NREADY, "Could not get the axis count: joystick not ready yet!");
@@ -196,7 +265,17 @@ guint8 joy_stick_get_axis_count(JoyStick* self, GError** err) {
 	return self->priv->naxes;
 }
 
-guchar joy_stick_get_button_count(JoyStick* self, GError** err) {
+/** 
+  * joy_stick_get_button_count:
+  * @stick: a #JoyStick
+  * @err: a #GError
+  *
+  * Get the number of buttons on this joystick.
+  *
+  * Returns: the number of buttons found on this joystick, or 0 in case
+  * of error (e.g., the JoyStick is not in a vaid state)
+  */
+guint8 joy_stick_get_button_count(JoyStick* self, GError** err) {
 	if(!self->priv->ready) {
 		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_DEV_NREADY, "Could not get the button count: joystick not ready yet!");
 		return 0;
@@ -204,6 +283,18 @@ guchar joy_stick_get_button_count(JoyStick* self, GError** err) {
 	return self->priv->nbuts;
 }
 
+/** 
+  * joy_stick_describe:
+  * @stick: a #JoyStick
+  * @err: a #GError
+  * 
+  * Identify this joystick.
+  *
+  * Returns: a human-readable string identifying this joystick, as
+  * returned by the kernel. This is usually a manufacturer name,
+  * followed by a model name. In case of error, %NULL is returned
+  * (with @err set appropriately)
+  */
 gchar* joy_stick_describe(JoyStick* self, GError** err) {
 	if(!self->priv->ready) {
 		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_DEV_NREADY, "Could not get the joystick name: joystick not ready yet!");
@@ -212,25 +303,111 @@ gchar* joy_stick_describe(JoyStick* self, GError** err) {
 	return self->priv->name;
 }
 
+/** 
+  * joy_stick_get_devnode:
+  * @stick: a #JoyStick
+  * @err: a #GError
+  *
+  * Look up the `/dev` entry to which this joystick is connected.
+  *
+  * Returns: the devnode for a joystick, or %NULL in case of error
+  * (with @err set appropriately)
+  */
 gchar* joy_stick_get_devnode(JoyStick* self, GError** err) {
 	return self->priv->devname;
 }
 
+/** 
+  * joy_stick_describe_axis:
+  * @stick: a #JoyStick
+  * @axis: the axis to identify
+  *
+  * Identify a given axis.
+  *
+  * There are several types of axes that can be found on joysticks, and
+  * they each have different functions. The exact intended functionality
+  * of a joystick axis is assigned by the manufacturer, and is passed on
+  * to the system as part of the HID protocol.
+  *
+  * This function will return the type of a joystick axis in
+  * human-readable format.
+  * 
+  * See also joy_stick_get_axis_type()
+  *
+  * Returns: a human-readable string describing the axis (e.g.,
+  * "Throttle" or "X")
+  */
 gchar* joy_stick_describe_axis(JoyStick* self, guint8 axis) {
 	return axis_names[self->priv->axmap[axis]];
 }
 
+/** 
+  * joy_stick_describe_button:
+  * @stick: a #JoyStick
+  * @button: the button to identify
+  *
+  * Identify a given button
+  *
+  * There are several types of buttons that can be found on joysticks, and
+  * they each have different functions. The exact intended functionality
+  * of a joystick button is assigned by the manufacturer, and is passed on
+  * to the system as part of the HID protocol.
+  *
+  * This function will return the type of a joystick button in
+  * human-readable format.
+  * 
+  * See also joy_stick_get_button_type()
+  *
+  * Returns: a human-readable string describing the button (e.g.,
+  * "Trigger" or "A")
+  */
 gchar* joy_stick_describe_button(JoyStick* self, guint8 button) {
 	g_assert(button < self->priv->nbuts);
 	return button_names[self->priv->butmap[button] - BTN_MISC];
 }
 
-enum joy_button_type joy_stick_get_button_type(JoyStick* self, guchar button) {
+/** 
+  * joy_stick_get_button_type:
+  * @stick: a #JoyStick
+  * @button: the button to identify
+  *
+  * Get the type of a given button
+  *
+  * There are several types of buttons that can be found on joysticks, and
+  * they each have different functions. The exact intended functionality
+  * of a joystick button is assigned by the manufacturer, and is passed on
+  * to the system as part of the HID protocol.
+  *
+  * This function will return the type of a joystick axis
+  *
+  * See also joy_stick_describe_button()
+  *
+  * Returns: the type of the button
+  */
+JoyBtnType joy_stick_get_button_type(JoyStick* self, guchar button) {
 	g_assert(button < self->priv->nbuts);
 	return (enum joy_button_type)(self->priv->butmap[button] - BTN_MISC);
 }
 
-enum joy_axis_type joy_stick_get_axis_type(JoyStick* self, guchar axis) {
+/** 
+  * joy_stick_get_axis_type:
+  * @stick: a #JoyStick
+  * @axis: the axis to identify
+  * 
+  * Identify a given axis
+  *
+  * There are several types of axes that can be found on joysticks, and
+  * they each have different functions. The exact intended functionality
+  * of a joystick axis is assigned by the manufacturer, and is passed on
+  * to the system as part of the HID protocol.
+  *
+  * This function will return the type of a joystick axis.
+  *
+  * See also joy_stick_describe_axis()
+  * 
+  * Returns: the type of the axis
+  */
+JoyAxisType joy_stick_get_axis_type(JoyStick* self, guchar axis) {
 	return (enum joy_axis_type)(self->priv->axmap[axis]);
 }
 
@@ -330,6 +507,18 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
 	gobject_class->get_property = get_property;
 	gobject_class->set_property = set_property;
 	gobject_class->finalize = finalize;
+/**
+  * JoyStick::button-pressed:
+  * @object: the object which received the signal.
+  * @button: the number of the button that was pressed.
+  *
+  * The ::button-pressed signal is emitted when a button on the
+  * joystick is pressed.
+  *
+  * The signal will have a detail of the button. E.g., when
+  * button 0 is pressed, the detailed event will be
+  * ::button-pressed:0.
+  */
 	klass->button_pressed = g_signal_new("button-pressed",
 				G_TYPE_FROM_CLASS(g_class),
 				G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE | G_SIGNAL_DETAILED,
@@ -340,6 +529,18 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
 				G_TYPE_NONE,
 				1,
 				G_TYPE_UCHAR);
+/**
+  * JoyStick::button-released:
+  * @object: the object which received the signal.
+  * @button: the number of the button that was released.
+  *
+  * The ::button-released signal is emitted when a button on the
+  * joystick is released.
+  *
+  * The signal will have a detail of the button. E.g., when
+  * button 0 is released, the detailed event will be
+  * ::button-released:0.
+  */
 	klass->button_released = g_signal_new("button-released",
 				G_TYPE_FROM_CLASS(g_class),
 				G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE | G_SIGNAL_DETAILED,
@@ -350,6 +551,20 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
 				G_TYPE_NONE,
 				1,
 				G_TYPE_UCHAR);
+/**
+  * JoyStick::axis-moved:
+  * @object: the object which received the signal.
+  * @axis: the number of the axis that was moved.
+  *
+  * The ::button-pressed signal is emitted when an axis on the
+  * joystick changes its value. However, it will never be issued
+  * more often than permitted by the #JoyStick:axis-interval
+  * property.
+  *
+  * The signal will have a detail of the button. E.g., when
+  * button 0 is pressed, the detailed event will be
+  * ::button-pressed:0.
+  */
 	klass->axis_moved = g_signal_new("axis-moved",
 				G_TYPE_FROM_CLASS(g_class),
 				G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE | G_SIGNAL_DETAILED,
@@ -361,6 +576,18 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
 				2,
 				G_TYPE_UCHAR,
 				G_TYPE_INT);
+/**
+  * JoyStick::disconnected:
+  * @object: the object which received the signal.
+  *
+  * When this signal is emitted, the joystick that was in use is
+  * no longer available (e.g., because the user disconnected the
+  * joystick from the system).
+  *
+  * An application should g_object_unref() the joystick, and
+  * possibly check to see if the user wants to use another
+  * joystick instead.
+  */
 	klass->disconnected = g_signal_new("disconnected",
 				G_TYPE_FROM_CLASS(g_class),
 				G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE,
@@ -375,6 +602,11 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
 				     "Whether the device has been opened",
 				     FALSE,
 				     G_PARAM_READABLE);
+/**
+ * JoyStick:open:
+ *
+ * Whether the device is open and available for use.
+ */
 	g_object_class_install_property(gobject_class,
 					JOY_OPEN,
 					pspec);
@@ -385,6 +617,11 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
 				   255,
 				   0,
 				   G_PARAM_READABLE);
+/**
+ * JoyStick:button-count:
+ *
+ * The number of buttons this joystick has
+ */
 	g_object_class_install_property(gobject_class,
 					JOY_BUTCNT,
 					pspec);
@@ -395,6 +632,11 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
 				   255,
 				   0,
 				   G_PARAM_READABLE);
+/**
+ * JoyStick:axis-count:
+ *
+ * The number of axes this joystick has
+ */
 	g_object_class_install_property(gobject_class,
 					JOY_AXCNT,
 					pspec);
@@ -448,6 +690,16 @@ GType joy_stick_get_type(void) {
 	return type;
 }
 
+/** 
+  * joy_stick_iteration:
+  * @stick: a #JoyStick
+  *
+  * Perform one iteration of handling joystick events and
+  * issuing signals.
+  *
+  * Note: This function will do nothing when the joystick is in
+  * %JOY_MODE_MAINLOOP mode.
+  */
 void joy_stick_iteration(JoyStick* self) {
 	struct js_event ev;
 	int rv;
@@ -480,12 +732,31 @@ void joy_stick_iteration(JoyStick* self) {
 	return;
 }
 
+/** 
+  * joy_stick_loop:
+  * @stick: a #JoyStick
+  *
+  * Read joystick events (in blocking mode) and issue signals.
+  *
+  * This function will only return when the joystick device is closed.
+  * 
+  * Note: This function will do nothing when the joystick is in
+  * %JOY_MODE_MAINLOOP mode.
+  */
 void joy_stick_loop(JoyStick* self) {
 	while(TRUE) {
 		joy_stick_iteration(self);
 	}
 }
 
+/** 
+  * joy_stick_set_mode:
+  * @mode: the new mode.
+  * @stick: a #JoyStick
+  *
+  * Select the mode in which to issue events
+  *
+  */
 void joy_stick_set_mode(JoyStick* self, JoyMode mode) {
 	if(self->priv->mode != mode) {
 		if(mode == JOY_MODE_MANUAL) {
@@ -499,10 +770,4 @@ void joy_stick_set_mode(JoyStick* self, JoyMode mode) {
 
 GQuark joy_get_errdomain(void) {
 	return g_quark_from_string("Joy");
-}
-
-GType joy_error_get_type(void) {
-	/* XXX */
-
-	return -1;
 }

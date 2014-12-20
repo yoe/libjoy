@@ -514,12 +514,13 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
   * @object: the object which received the signal.
   * @button: the number of the button that was pressed.
   *
-  * The ::button-pressed signal is emitted when a button on the
+  * The #JoyStick::button-pressed signal is emitted when a button on the
   * joystick is pressed.
   *
-  * The signal will have a detail of the button. E.g., when
-  * button 0 is pressed, the detailed event will be
-  * ::button-pressed:0.
+  * The signal will have a detail of the button. E.g., when button 0 is
+  * pressed, the detailed event will be `button-pressed:0`. As such, it
+  * is possible to only connect to this event for the button(s) one is
+  * interested in.
   */
 	klass->button_pressed =
 	  g_signal_new("button-pressed",
@@ -537,12 +538,13 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
   * @object: the object which received the signal.
   * @button: the number of the button that was released.
   *
-  * The ::button-released signal is emitted when a button on the
+  * The #JoyStick::button-released signal is emitted when a button on the
   * joystick is released.
   *
-  * The signal will have a detail of the button. E.g., when
-  * button 0 is released, the detailed event will be
-  * ::button-released:0.
+  * The signal will have a detail of the button. E.g., when button 0 is
+  * released, the detailed event will be `button-released:0`.  As such,
+  * it is possible to only connect to this event for the button(s) one
+  * is interested in.
   */
 	klass->button_released =
 	  g_signal_new("button-released",
@@ -561,14 +563,15 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
   * @axis: the number of the axis that was moved.
   * @newval: the new value of the axis.
   *
-  * The ::button-pressed signal is emitted when an axis on the
+  * The #JoyStick::axis-moved signal is emitted when an axis on the
   * joystick changes its value. However, it will never be issued
   * more often than permitted by the #JoyStick:axis-interval
   * property.
   *
-  * The signal will have a detail of the button. E.g., when
-  * button 0 is pressed, the detailed event will be
-  * ::button-pressed:0.
+  * The signal will have a detail of the button. E.g., when axis 0
+  * changes its value, the detailed event will be `axis-moved:0`. As
+  * such, it is possible to only connect to this event for the axis (or
+  * axes) one is interested in.
   */
 	klass->axis_moved =
 	  g_signal_new("axis-moved",
@@ -593,6 +596,9 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
   * An application should g_object_unref() the joystick, and
   * possibly check to see if the user wants to use another
   * joystick instead.
+  *
+  * It is not possible to reconnect a #JoyStick object that has lost its
+  * hardware.
   */
 	klass->disconnected =
 	  g_signal_new("disconnected",
@@ -607,12 +613,14 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
 /**
  * JoyStick:open:
  *
- * Whether the device is open and available for use.
+ * Whether the device is open and available for use. This should always
+ * be the case, except in case of error, or after the
+ * #JoyStick::disconnected signal has been emitted.
  */
 	props[JOY_OPEN] = 
 	  g_param_spec_boolean("open",
 				     "Open",
-				     "Whether the device has been opened",
+				     "Whether the device has been opened.",
 				     FALSE,
 				     G_PARAM_READABLE);
 /**
@@ -643,8 +651,6 @@ static void class_init(gpointer g_class, gpointer g_class_data) {
 				   G_PARAM_READABLE);
 /**
  * JoyStick:name:
- *
- * The name of the device (as reported by the kernel)
  */
 	props[JOY_NAME] =
 	  g_param_spec_string("name",

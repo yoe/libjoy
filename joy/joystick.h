@@ -217,12 +217,27 @@ typedef struct _JoyStick JoyStick;
 typedef struct _JoyStickClass JoyStickClass;
 typedef struct _JoyStickPrivate JoyStickPrivate;
 
+/**
+  * JoyStick:
+  *
+  * Opaque object representing a joystick
+  */
 struct _JoyStick {
 	/*< private >*/
 	GObject parent;
 	JoyStickPrivate *priv;
 };
 
+/**
+  * JoyStickClass:
+  * @button_pressed: signal emitted when a button is pressed
+  * @button_released: signal emitted when a button is released
+  * @axis_moved: signal emitted when an axis is removed
+  * @disconnected: signal emitted when the joystick is disconnected.
+  *
+  * The signals are only visible so that subclasses (if any) can  use
+  * them.
+  */
 struct _JoyStickClass {
 	/*< private >*/
 	GObjectClass parent;

@@ -36,5 +36,5 @@ AC_TYPE_UINT8_T
 # Checks for library functions.
 AC_CHECK_FUNCS([strerror])
 
-AC_CONFIG_FILES([Makefile joy/Makefile docs/Makefile])
+AC_CONFIG_FILES([Makefile joy/Makefile docs/Makefile docs/joy-docs.xml])
 AC_OUTPUT

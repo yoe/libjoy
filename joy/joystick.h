@@ -218,16 +218,17 @@ typedef struct _JoyStickClass JoyStickClass;
 typedef struct _JoyStickPrivate JoyStickPrivate;
 
 struct _JoyStick {
+	/*< private >*/
 	GObject parent;
 	JoyStickPrivate *priv;
 };
 
 struct _JoyStickClass {
+	/*< private >*/
 	GObjectClass parent;
 
-	/* mode */
-
 	/* signals */
+	/*< public >*/
 	guint button_pressed;
 	guint button_released;
 	guint axis_moved;

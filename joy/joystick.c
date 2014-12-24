@@ -200,7 +200,7 @@ GList* joy_stick_enumerate(GError** err) {
   */
 gchar* joy_stick_describe_unopened(gchar* devname, GError** err) {
 	JoyStick* joy = joy_stick_open(devname);
-	gchar* retval = joy_stick_describe(joy, err);
+	gchar* retval = g_strdup(joy_stick_describe(joy, err));
 	g_object_unref(joy);
 	return retval;
 }
@@ -298,7 +298,7 @@ guint8 joy_stick_get_button_count(JoyStick* self, GError** err) {
   * followed by a model name. In case of error, %NULL is returned (with @err
   * set appropriately)
   */
-gchar* joy_stick_describe(JoyStick* self, GError** err) {
+const gchar* joy_stick_describe(JoyStick* self, GError** err) {
 	if(!self->priv->ready) {
 		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_DEV_NREADY, "Could not get the joystick name: joystick not ready yet!");
 		return 0;
@@ -316,7 +316,7 @@ gchar* joy_stick_describe(JoyStick* self, GError** err) {
   * Returns: (transfer none): the devnode for a joystick, or %NULL in case of
   * error (with @err set appropriately)
   */
-gchar* joy_stick_get_devnode(JoyStick* self, GError** err) {
+const gchar* joy_stick_get_devnode(JoyStick* self, GError** err) {
 	return self->priv->devname;
 }
 
@@ -340,7 +340,7 @@ gchar* joy_stick_get_devnode(JoyStick* self, GError** err) {
   * Returns: (transfer none): a human-readable string describing the axis
   * (e.g., "Throttle" or "X")
   */
-gchar* joy_stick_describe_axis(JoyStick* self, guint8 axis) {
+const gchar* joy_stick_describe_axis(JoyStick* self, guint8 axis) {
 	return axis_names[self->priv->axmap[axis]];
 }
 
@@ -364,7 +364,7 @@ gchar* joy_stick_describe_axis(JoyStick* self, guint8 axis) {
   * Returns: (transfer none): a human-readable string describing the button
   * (e.g., "Trigger" or "A")
   */
-gchar* joy_stick_describe_button(JoyStick* self, guint8 button) {
+const gchar* joy_stick_describe_button(JoyStick* self, guint8 button) {
 	g_assert(button < self->priv->nbuts);
 	return button_names[self->priv->butmap[button] - BTN_MISC];
 }

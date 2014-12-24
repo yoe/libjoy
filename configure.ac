@@ -9,7 +9,7 @@ AC_CONFIG_SRCDIR([joy/joystick.h])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
-AM_INIT_AUTOMAKE([foreign dist-bzip2])
+AM_INIT_AUTOMAKE([foreign dist-xz])
 AM_MAINTAINER_MODE([enable])
 LT_INIT
 GTK_DOC_CHECK([1.14], [--flavour no-tmpl])

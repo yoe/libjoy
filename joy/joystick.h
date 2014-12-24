@@ -256,19 +256,19 @@ GList* joy_stick_enumerate(GError** err);
 void joy_stick_enum_free(GList* enumeration);
 gchar* joy_stick_describe_unopened(gchar* devname, GError** err);
 /* instance functions */
-gchar* joy_stick_get_devnode(JoyStick* stick, GError** err);
-guint8 joy_stick_get_axis_count(JoyStick* stick, GError** err);
-guint8 joy_stick_get_button_count(JoyStick* stick, GError** err);
-gchar* joy_stick_describe(JoyStick* stick, GError** err);
-gchar* joy_stick_describe_axis(JoyStick* stick, guchar axis);
-gchar* joy_stick_describe_button(JoyStick* stick, guchar button);
-JoyBtnType joy_stick_get_button_type(JoyStick* stick, guchar button);
-JoyAxisType joy_stick_get_axis_type(JoyStick* stick, guchar axis);
-gint16 joy_stick_get_typed_axis(JoyStick* stick, JoyAxisType type, GError** err);
-gint16 joy_stick_get_typed_button(JoyStick* stick, JoyBtnType type, GError** err);
-void joy_stick_set_mode(JoyStick* stick, JoyMode mode);
-void joy_stick_iteration(JoyStick* stick);
-void joy_stick_loop(JoyStick* stick);
+const gchar* joy_stick_get_devnode(JoyStick* self, GError** err);
+guint8 joy_stick_get_axis_count(JoyStick* self, GError** err);
+guint8 joy_stick_get_button_count(JoyStick* self, GError** err);
+const gchar* joy_stick_describe(JoyStick* self, GError** err);
+const gchar* joy_stick_describe_axis(JoyStick* self, guchar axis);
+const gchar* joy_stick_describe_button(JoyStick* self, guchar button);
+JoyBtnType joy_stick_get_button_type(JoyStick* self, guchar button);
+JoyAxisType joy_stick_get_axis_type(JoyStick* self, guchar axis);
+gint16 joy_stick_get_typed_axis(JoyStick* self, JoyAxisType type, GError** err);
+gint16 joy_stick_get_typed_button(JoyStick* self, JoyBtnType type, GError** err);
+void joy_stick_set_mode(JoyStick* self, JoyMode mode);
+void joy_stick_iteration(JoyStick* self);
+void joy_stick_loop(JoyStick* self);
 
 /* type handling functions */
 GType joy_stick_get_type(void) G_GNUC_PURE;

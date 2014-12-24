@@ -96,7 +96,7 @@ enum {
 static GParamSpec *props[JOY_PROP_COUNT] = { NULL, };
 
 /** 
-  * joy_stick_open:
+  * joy_stick_open: (constructor)
   * @devname: the device node of the joystick to open
   * 
   * This function creates a new #JoyStick object.
@@ -123,7 +123,7 @@ JoyStick* joy_stick_open(const gchar* devname) {
 }
 
 /** 
-  * joy_stick_enum_free:
+  * joy_stick_enum_free: (skip)
   * @enumeration: the enumeration to free.
   *
   * Free the return value of joy_stick_enumerate(). This is a
@@ -148,8 +148,8 @@ void joy_stick_enum_free(GList* enumeration) {
   *
   * See also joy_stick_enum_free()
   *
-  * Returns: a #GList of #JoyStick objects, or %NULL in case of error
-  * (with @err set appropriately)
+  * Returns: (element-type Joy.Stick) (transfer full): a #GList of #JoyStick
+  * objects, or %NULL in case of error (with @err set appropriately)
   */
 GList* joy_stick_enumerate(GError** err) {
 	GList* retval = NULL;
@@ -195,8 +195,8 @@ GList* joy_stick_enumerate(GError** err) {
   * substitute for when joy_stick_open() followed by
   * joy_stick_describe() fails for some reason (e.g., permission issues)
   *
-  * Returns: the identity string of the joystick, or %NULL in case of
-  * error (with @err set appropriately)
+  * Returns: (transfer full): the identity string of the joystick, or %NULL in
+  * case of error (with @err set appropriately)
   */
 gchar* joy_stick_describe_unopened(gchar* devname, GError** err) {
 	JoyStick* joy = joy_stick_open(devname);
@@ -252,7 +252,7 @@ static gboolean joy_stick_reopen(JoyStick* self, GError** err) {
 
 /** 
   * joy_stick_get_axis_count:
-  * @stick: a #JoyStick
+  * @self: a #JoyStick
   * @err: a #GError
   *
   * Get the number of axes on this joystick
@@ -270,7 +270,7 @@ guint8 joy_stick_get_axis_count(JoyStick* self, GError** err) {
 
 /** 
   * joy_stick_get_button_count:
-  * @stick: a #JoyStick
+  * @self: a #JoyStick
   * @err: a #GError
   *
   * Get the number of buttons on this joystick.
@@ -288,15 +288,15 @@ guint8 joy_stick_get_button_count(JoyStick* self, GError** err) {
 
 /** 
   * joy_stick_describe:
-  * @stick: a #JoyStick
+  * @self: a #JoyStick
   * @err: a #GError
   * 
   * Identify this joystick.
   *
-  * Returns: a human-readable string identifying this joystick, as
-  * returned by the kernel. This is usually a manufacturer name,
-  * followed by a model name. In case of error, %NULL is returned
-  * (with @err set appropriately)
+  * Returns: (transfer none): a human-readable string identifying this
+  * joystick, as returned by the kernel. This is usually a manufacturer name,
+  * followed by a model name. In case of error, %NULL is returned (with @err
+  * set appropriately)
   */
 gchar* joy_stick_describe(JoyStick* self, GError** err) {
 	if(!self->priv->ready) {
@@ -308,13 +308,13 @@ gchar* joy_stick_describe(JoyStick* self, GError** err) {
 
 /** 
   * joy_stick_get_devnode:
-  * @stick: a #JoyStick
+  * @self: a #JoyStick
   * @err: a #GError
   *
   * Look up the `/dev` entry to which this joystick is connected.
   *
-  * Returns: the devnode for a joystick, or %NULL in case of error
-  * (with @err set appropriately)
+  * Returns: (transfer none): the devnode for a joystick, or %NULL in case of
+  * error (with @err set appropriately)
   */
 gchar* joy_stick_get_devnode(JoyStick* self, GError** err) {
 	return self->priv->devname;
@@ -322,7 +322,7 @@ gchar* joy_stick_get_devnode(JoyStick* self, GError** err) {
 
 /** 
   * joy_stick_describe_axis:
-  * @stick: a #JoyStick
+  * @self: a #JoyStick
   * @axis: the axis to identify
   *
   * Identify a given axis.
@@ -337,8 +337,8 @@ gchar* joy_stick_get_devnode(JoyStick* self, GError** err) {
   * 
   * See also joy_stick_get_axis_type()
   *
-  * Returns: a human-readable string describing the axis (e.g.,
-  * "Throttle" or "X")
+  * Returns: (transfer none): a human-readable string describing the axis
+  * (e.g., "Throttle" or "X")
   */
 gchar* joy_stick_describe_axis(JoyStick* self, guint8 axis) {
 	return axis_names[self->priv->axmap[axis]];
@@ -346,7 +346,7 @@ gchar* joy_stick_describe_axis(JoyStick* self, guint8 axis) {
 
 /** 
   * joy_stick_describe_button:
-  * @stick: a #JoyStick
+  * @self: a #JoyStick
   * @button: the button to identify
   *
   * Identify a given button
@@ -361,8 +361,8 @@ gchar* joy_stick_describe_axis(JoyStick* self, guint8 axis) {
   * 
   * See also joy_stick_get_button_type()
   *
-  * Returns: a human-readable string describing the button (e.g.,
-  * "Trigger" or "A")
+  * Returns: (transfer none): a human-readable string describing the button
+  * (e.g., "Trigger" or "A")
   */
 gchar* joy_stick_describe_button(JoyStick* self, guint8 button) {
 	g_assert(button < self->priv->nbuts);
@@ -371,7 +371,7 @@ gchar* joy_stick_describe_button(JoyStick* self, guint8 button) {
 
 /** 
   * joy_stick_get_button_type:
-  * @stick: a #JoyStick
+  * @self: a #JoyStick
   * @button: the button to identify
   *
   * Get the type of a given button
@@ -394,7 +394,7 @@ JoyBtnType joy_stick_get_button_type(JoyStick* self, guchar button) {
 
 /** 
   * joy_stick_get_axis_type:
-  * @stick: a #JoyStick
+  * @self: a #JoyStick
   * @axis: the axis to identify
   * 
   * Identify a given axis
@@ -707,7 +707,7 @@ GType joy_stick_get_type(void) {
 
 /** 
   * joy_stick_iteration:
-  * @stick: a #JoyStick
+  * @self: a #JoyStick
   *
   * Perform one iteration of handling joystick events and
   * issuing signals.
@@ -749,7 +749,7 @@ void joy_stick_iteration(JoyStick* self) {
 
 /** 
   * joy_stick_loop:
-  * @stick: a #JoyStick
+  * @self: a #JoyStick
   *
   * Read joystick events (in blocking mode) and issue signals.
   *
@@ -766,8 +766,8 @@ void joy_stick_loop(JoyStick* self) {
 
 /** 
   * joy_stick_set_mode:
+  * @self: a #JoyStick
   * @mode: the new mode.
-  * @stick: a #JoyStick
   *
   * Select the mode in which to issue events
   *

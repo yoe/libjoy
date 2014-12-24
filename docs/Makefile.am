@@ -86,9 +86,9 @@ expand_content_files=
 # e.g. GTKDOC_CFLAGS=-I$(top_srcdir) -I$(top_builddir) $(GTK_DEBUG_FLAGS)
 # e.g. GTKDOC_LIBS=$(top_builddir)/gtk/$(gtktargetlib)
 GTKDOC_CFLAGS=-I$(top_srcdir)/joy -I$(top_builddir)/joy
-GTKDOC_LIBS=$(top_builddir)/joy/libjoy.la @UDEV_LIBS@ @GOBJECT_LIBS@
+GTKDOC_LIBS=$(top_builddir)/joy/libjoy-1.0.la @UDEV_LIBS@ @GOBJECT_LIBS@
 if GTK_ON
-GTKDOC_LIBS+=$(top_builddir)/joy/libjoy-gtk.la @GTK_LIBS@
+GTKDOC_LIBS+=$(top_builddir)/joy/libjoy-gtk-1.0.la @GTK_LIBS@
 endif
 
 # This includes the standard gtk-doc make rules, copied by gtkdocize.

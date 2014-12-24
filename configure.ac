@@ -13,6 +13,7 @@ AM_INIT_AUTOMAKE([foreign dist-xz])
 AM_MAINTAINER_MODE([enable])
 LT_INIT
 GTK_DOC_CHECK([1.14], [--flavour no-tmpl])
+GOBJECT_INTROSPECTION_CHECK([1.30.0])
 
 # Checks for programs.
 AC_PROG_CC_C99

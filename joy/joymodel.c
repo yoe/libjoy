@@ -43,7 +43,7 @@ struct _JoyModelPrivate {
 struct udev* udev;
 
 /**
- * joy_model_new:
+ * joy_model_new: (constructor)
  * @err: a #GError
  *
  * Create a #JoyModel

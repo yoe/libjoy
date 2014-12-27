@@ -169,7 +169,7 @@ int main(int argc, char** argv) {
 	window = GTK_WIDGET(gtk_builder_get_object(builder, "mainwin"));
 
 	treeview = GTK_WIDGET(gtk_builder_get_object(builder, "joyview"));
-	model = joy_stick_enumerate_model(&err);
+	model = joy_model_new(&err);
 	if(!model) {
 		g_critical("Could not search for joysticks: %s", err->message);
 		exit(EXIT_FAILURE);

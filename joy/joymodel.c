@@ -43,7 +43,7 @@ struct _JoyModelPrivate {
 struct udev* udev;
 
 /**
- * joy_stick_enumerate_model:
+ * joy_model_new:
  * @err: a #GError
  *
  * Create a #JoyModel
@@ -53,7 +53,7 @@ struct udev* udev;
  *
  * Returns: a #JoyModel, or NULL in case of error (with @err set appropriately)
  */
-GtkTreeModel* joy_stick_enumerate_model(GError** err) {
+GtkTreeModel* joy_model_new(GError** err) {
 	JoyModel* mod;
 	GtkListStore* l;
 

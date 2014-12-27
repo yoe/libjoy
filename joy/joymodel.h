@@ -73,7 +73,7 @@ struct _JoyModelClass {
 	GtkListStoreClass parent_class;
 };
 
-GtkTreeModel* joy_stick_enumerate_model(GError** err);
+GtkTreeModel* joy_model_new(GError** err);
 
 GType joy_model_get_type(void) G_GNUC_CONST;
 

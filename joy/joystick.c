@@ -142,16 +142,15 @@ void joy_stick_enum_free(GList* enumeration) {
 
 /** 
   * joy_stick_enumerate: (transfer full)
-  * @err: a #GError
   *
   * Enumerate all joystick device nodes on this system
   *
   * See also joy_stick_enum_free()
   *
   * Returns: (element-type Joy.Stick) (transfer full): a #GList of #JoyStick
-  * objects, or %NULL in case of error (with @err set appropriately)
+  * objects, or %NULL in case of error
   */
-GList* joy_stick_enumerate(GError** err) {
+GList* joy_stick_enumerate() {
 	GList* retval = NULL;
 	struct udev* udev;
 	struct udev_enumerate *enumer;
@@ -161,7 +160,6 @@ GList* joy_stick_enumerate(GError** err) {
 
 	udev = udev_new();
 	if(!udev) {
-		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_UDEV, "Could not initialize udev");
 		return NULL;
 	}
 
@@ -185,7 +183,6 @@ GList* joy_stick_enumerate(GError** err) {
 /** 
   * joy_stick_describe_unopened:
   * @devname: the path of the joystick device node to describe.
-  * @err: a #GError
   *
   * Describe a joystick without first calling joy_stick_open().
   *
@@ -198,9 +195,9 @@ GList* joy_stick_enumerate(GError** err) {
   * Returns: (transfer full): the identity string of the joystick, or %NULL in
   * case of error (with @err set appropriately)
   */
-gchar* joy_stick_describe_unopened(gchar* devname, GError** err) {
+gchar* joy_stick_describe_unopened(gchar* devname) {
 	JoyStick* joy = joy_stick_open(devname);
-	gchar* retval = g_strdup(joy_stick_describe(joy, err));
+	gchar* retval = g_strdup(joy_stick_describe(joy));
 	g_object_unref(joy);
 	return retval;
 }
@@ -219,7 +216,7 @@ static gboolean handle_joystick_event(gint fd, GIOCondition cond, gpointer user_
 	return TRUE;
 }
 
-static gboolean joy_stick_reopen(JoyStick* self, GError** err) {
+static gboolean joy_stick_reopen(JoyStick* self) {
 	self->priv->ready = FALSE;
 	if(self->priv->fd >= 0) {
 		close(self->priv->fd);
@@ -228,13 +225,11 @@ static gboolean joy_stick_reopen(JoyStick* self, GError** err) {
 		g_array_set_size(self->priv->axevts, 0);
 	}
 	if(!self->priv->devname) {
-		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_NDEV, "Could not open joystick: no device name provided!");
 		self->priv->fd = -1;
 		return FALSE;
 	}
 	self->priv->fd = open(self->priv->devname, O_RDONLY);
 	if(self->priv->fd < 0) {
-		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_DEV_NREADY, "Could not open %s: %s", self->priv->devname, strerror(errno));
 		return FALSE;
 	}
 	ioctl(self->priv->fd, JSIOCGAXMAP, self->priv->axmap);
@@ -253,16 +248,14 @@ static gboolean joy_stick_reopen(JoyStick* self, GError** err) {
 /** 
   * joy_stick_get_axis_count:
   * @self: a #JoyStick
-  * @err: a #GError
   *
   * Get the number of axes on this joystick
   *
   * Returns: the number of axes found on the given joystick, or 0 in
   * case of error (e.g., the #JoyStick is not in a valid state).
   */
-guint8 joy_stick_get_axis_count(JoyStick* self, GError** err) {
+guint8 joy_stick_get_axis_count(JoyStick* self) {
 	if(!self->priv->ready) {
-		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_DEV_NREADY, "Could not get the axis count: joystick not ready yet!");
 		return 0;
 	}
 	return self->priv->naxes;
@@ -271,16 +264,14 @@ guint8 joy_stick_get_axis_count(JoyStick* self, GError** err) {
 /** 
   * joy_stick_get_button_count:
   * @self: a #JoyStick
-  * @err: a #GError
   *
   * Get the number of buttons on this joystick.
   *
   * Returns: the number of buttons found on this joystick, or 0 in case
   * of error (e.g., the JoyStick is not in a vaid state)
   */
-guint8 joy_stick_get_button_count(JoyStick* self, GError** err) {
+guint8 joy_stick_get_button_count(JoyStick* self) {
 	if(!self->priv->ready) {
-		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_DEV_NREADY, "Could not get the button count: joystick not ready yet!");
 		return 0;
 	}
 	return self->priv->nbuts;
@@ -289,7 +280,6 @@ guint8 joy_stick_get_button_count(JoyStick* self, GError** err) {
 /** 
   * joy_stick_describe:
   * @self: a #JoyStick
-  * @err: a #GError
   * 
   * Identify this joystick.
   *
@@ -298,9 +288,8 @@ guint8 joy_stick_get_button_count(JoyStick* self, GError** err) {
   * followed by a model name. In case of error, %NULL is returned (with @err
   * set appropriately)
   */
-const gchar* joy_stick_describe(JoyStick* self, GError** err) {
+const gchar* joy_stick_describe(JoyStick* self) {
 	if(!self->priv->ready) {
-		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_DEV_NREADY, "Could not get the joystick name: joystick not ready yet!");
 		return 0;
 	}
 	return self->priv->name;
@@ -309,14 +298,13 @@ const gchar* joy_stick_describe(JoyStick* self, GError** err) {
 /** 
   * joy_stick_get_devnode:
   * @self: a #JoyStick
-  * @err: a #GError
   *
   * Look up the `/dev` entry to which this joystick is connected.
   *
   * Returns: (transfer none): the devnode for a joystick, or %NULL in case of
   * error (with @err set appropriately)
   */
-const gchar* joy_stick_get_devnode(JoyStick* self, GError** err) {
+const gchar* joy_stick_get_devnode(JoyStick* self) {
 	return self->priv->devname;
 }
 
@@ -482,7 +470,7 @@ static void set_property(GObject* object, guint property_id, const GValue *value
 	switch(property_id) {
 	case JOY_DEVNAME:
 		self->priv->devname = g_value_dup_string(value);
-		joy_stick_reopen(self, NULL);
+		joy_stick_reopen(self);
 		break;
 	case JOY_INTV:
 		self->priv->axintv = g_value_get_uint(value);
@@ -787,17 +775,15 @@ void joy_stick_set_mode(JoyStick* self, JoyMode mode) {
   * joy_stick_get_typed_axis:
   * @self: a #JoyStick
   * @type: the wanted axis type
-  * @err: a #GError
   *
   * Check for an axis with the given type. If the joystick does not have such
-  * an axis, -1 is returned. If an error occurs, -2 is returned.
+  * an axis, -1 is returned. If the joystick is not open, -2 is returned.
   *
   * Returns: the number of the axis of the given type (a number from 0 to 255),
-  * -1, or -2 (with @err set appropriately).
+  * -1, or -2.
   */
-gint16 joy_stick_get_typed_axis(JoyStick* self, JoyAxisType type, GError** err) {
+gint16 joy_stick_get_typed_axis(JoyStick* self, JoyAxisType type) {
 	if(!self->priv->ready) {
-		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_DEV_NREADY, "Could not look up axis: joystick not initialized!");
 		return -2;
 	}
 	for(int i=0; i<self->priv->naxes; i++) {
@@ -812,17 +798,15 @@ gint16 joy_stick_get_typed_axis(JoyStick* self, JoyAxisType type, GError** err) 
   * joy_stick_get_typed_button:
   * @self: a #JoyStick
   * @type: the wanted button type
-  * @err: a #GError
   *
   * Check for a button with the given type. If the joystick does not have such
-  * a button or an error occurs, -1 is returned.
+  * a button, -1 is returned; if the joystick is not open, -2 is returned.
   *
   * Returns: the number of the axis of the given type (a number from 0 to 255),
   * or -1 (with @err set appropriately).
   */
-gint16 joy_stick_get_typed_button(JoyStick* self, JoyBtnType type, GError** err) {
+gint16 joy_stick_get_typed_button(JoyStick* self, JoyBtnType type) {
 	if(!self->priv->ready) {
-		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_DEV_NREADY, "Could not look up axis: joystick not initialized!");
 		return -2;
 	}
 	for(int i=0; i<self->priv->nbuts; i++) {
@@ -831,8 +815,4 @@ gint16 joy_stick_get_typed_button(JoyStick* self, JoyBtnType type, GError** err)
 		}
 	}
 	return -1;
-}
-
-GQuark joy_get_errdomain(void) {
-	return g_quark_from_string("Joy");
 }

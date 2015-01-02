@@ -135,11 +135,11 @@ void tree_selection_changed(GtkTreeSelection* sel, gpointer data) {
 		g_object_ref(G_OBJECT(active));
 
 		GtkWidget *widget = GTK_WIDGET(gtk_builder_get_object(builder, "namelabel"));
-		gchar* labeltext = g_strdup_printf("%s on %s", joy_stick_describe(active, NULL), joy_stick_get_devnode(active, NULL));
+		gchar* labeltext = g_strdup_printf("%s on %s", joy_stick_describe(active), joy_stick_get_devnode(active));
 		gtk_label_set_text(GTK_LABEL(widget), labeltext);
 
-		guchar axes = joy_stick_get_axis_count(active, NULL);
-		guchar buttons = joy_stick_get_button_count(active, NULL);
+		guchar axes = joy_stick_get_axis_count(active);
+		guchar buttons = joy_stick_get_button_count(active);
 
 		GtkGrid* grid = GTK_GRID(gtk_builder_get_object(builder, "detailsgrid"));
 		set_axis_count(active, axes, builder);

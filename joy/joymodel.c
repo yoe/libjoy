@@ -44,16 +44,15 @@ struct udev* udev;
 
 /**
  * joy_model_new: (constructor)
- * @err: a #GError
  *
  * Create a #JoyModel
  *
  * This function returns a model that will dynamically be updated as joysticks
  * are added to and removed from the system.
  *
- * Returns: a #JoyModel, or NULL in case of error (with @err set appropriately)
+ * Returns: a #JoyModel, or NULL in case of error
  */
-GtkTreeModel* joy_model_new(GError** err) {
+GtkTreeModel* joy_model_new() {
 	JoyModel* mod;
 	GtkListStore* l;
 
@@ -61,7 +60,6 @@ GtkTreeModel* joy_model_new(GError** err) {
 	l = GTK_LIST_STORE(mod);
 
 	if(!mod->priv->objs) {
-		g_set_error(err, JOY_ERROR_DOMAIN, JOY_ERR_NJS, "No joysticks found!");
 		return GTK_TREE_MODEL(l);
 	}
 
@@ -74,10 +72,10 @@ GtkTreeModel* joy_model_new(GError** err) {
 
 		gtk_list_store_append(l, iter);
 		gtk_list_store_set(l, iter,
-				   JOY_COLUMN_DEV, joy_stick_get_devnode(stick, err),
-				   JOY_COLUMN_NAME, joy_stick_describe(stick, err),
-				   JOY_COLUMN_AXES, joy_stick_get_axis_count(stick, err),
-				   JOY_COLUMN_BUTTONS, joy_stick_get_button_count(stick, err),
+				   JOY_COLUMN_DEV, joy_stick_get_devnode(stick),
+				   JOY_COLUMN_NAME, joy_stick_describe(stick),
+				   JOY_COLUMN_AXES, joy_stick_get_axis_count(stick),
+				   JOY_COLUMN_BUTTONS, joy_stick_get_button_count(stick),
 				   JOY_COLUMN_OBJECT, stick,
 				   -1);
 		obj = obj->next;
@@ -97,7 +95,7 @@ static gboolean handle_udev_event(gint fd, GIOCondition cond, gpointer user_data
 		GList* it = self->priv->iters;
 		const char* act = udev_device_get_action(dev);
 		if(!strcmp(act, "remove")) {
-			while(strcmp(joy_stick_get_devnode(JOY_STICK(obj->data), NULL), udev_device_get_devnode(dev))) {
+			while(strcmp(joy_stick_get_devnode(JOY_STICK(obj->data)), udev_device_get_devnode(dev))) {
 				obj = obj->next;
 				it = it->next;
 			}
@@ -117,10 +115,10 @@ static gboolean handle_udev_event(gint fd, GIOCondition cond, gpointer user_data
 
 			gtk_list_store_append(GTK_LIST_STORE(self), iter);
 			gtk_list_store_set(GTK_LIST_STORE(self), iter,
-							JOY_COLUMN_DEV, joy_stick_get_devnode(stick, NULL),
-							JOY_COLUMN_NAME, joy_stick_describe(stick, NULL),
-							JOY_COLUMN_AXES, joy_stick_get_axis_count(stick, NULL),
-							JOY_COLUMN_BUTTONS, joy_stick_get_button_count(stick, NULL),
+							JOY_COLUMN_DEV, joy_stick_get_devnode(stick),
+							JOY_COLUMN_NAME, joy_stick_describe(stick),
+							JOY_COLUMN_AXES, joy_stick_get_axis_count(stick),
+							JOY_COLUMN_BUTTONS, joy_stick_get_button_count(stick),
 							JOY_COLUMN_OBJECT, stick,
 							-1);
 		}

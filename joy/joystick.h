@@ -30,23 +30,6 @@ G_BEGIN_DECLS
 #define JOY_IS_STICK(obj)		(G_TYPE_CHECK_INSTANCE_TYPE((obj), JOY_TYPE_STICK))
 #define JOY_IS_STICK_CLASS(vtable)	(G_TYPE_CHECK_CLASS_TYPE((vtable), JOY_TYPE_STICK))
 #define JOY_STICK_GET_CLASS(inst)	(G_TYPE_INSTANCE_GET_CLASS((inst), JOY_TYPE_STICK, JoyStickClass))
-#define JOY_ERROR_DOMAIN		(joy_get_errdomain())
-
-/**
-  * JoyError:
-  * @JOY_ERR_DEV_NREADY: An operation was performed on a JoyStick which requires a joystick, but none was found on the provided device node.
-  * @JOY_ERR_NDEV: Error opening the joystick: device name not given.
-  * @JOY_ERR_UDEV: Error while dealing with udev.
-  * @JOY_ERR_NJS: No joysticks were found (for "enumerate" style functions).
-  *
-  * possible error values for libjoy
-  */
-typedef enum {
-	JOY_ERR_DEV_NREADY,
-	JOY_ERR_NDEV,
-	JOY_ERR_UDEV,
-	JOY_ERR_NJS,
-} JoyError;
 
 /* The next two enums were defined based on jstest.c */
 /**
@@ -252,27 +235,26 @@ struct _JoyStickClass {
 
 /* constructors & class functions */
 JoyStick* joy_stick_open(const gchar* devname);
-GList* joy_stick_enumerate(GError** err);
+GList* joy_stick_enumerate();
 void joy_stick_enum_free(GList* enumeration);
-gchar* joy_stick_describe_unopened(gchar* devname, GError** err);
+gchar* joy_stick_describe_unopened(gchar* devname);
 /* instance functions */
-const gchar* joy_stick_get_devnode(JoyStick* self, GError** err);
-guint8 joy_stick_get_axis_count(JoyStick* self, GError** err);
-guint8 joy_stick_get_button_count(JoyStick* self, GError** err);
-const gchar* joy_stick_describe(JoyStick* self, GError** err);
+const gchar* joy_stick_get_devnode(JoyStick* self);
+guint8 joy_stick_get_axis_count(JoyStick* self);
+guint8 joy_stick_get_button_count(JoyStick* self);
+const gchar* joy_stick_describe(JoyStick* self);
 const gchar* joy_stick_describe_axis(JoyStick* self, guchar axis);
 const gchar* joy_stick_describe_button(JoyStick* self, guchar button);
 JoyBtnType joy_stick_get_button_type(JoyStick* self, guchar button);
 JoyAxisType joy_stick_get_axis_type(JoyStick* self, guchar axis);
-gint16 joy_stick_get_typed_axis(JoyStick* self, JoyAxisType type, GError** err);
-gint16 joy_stick_get_typed_button(JoyStick* self, JoyBtnType type, GError** err);
+gint16 joy_stick_get_typed_axis(JoyStick* self, JoyAxisType type);
+gint16 joy_stick_get_typed_button(JoyStick* self, JoyBtnType type);
 void joy_stick_set_mode(JoyStick* self, JoyMode mode);
 void joy_stick_iteration(JoyStick* self);
 void joy_stick_loop(JoyStick* self);
 
 /* type handling functions */
 GType joy_stick_get_type(void) G_GNUC_PURE;
-GQuark joy_get_errdomain(void) G_GNUC_PURE;
 
 G_END_DECLS
 

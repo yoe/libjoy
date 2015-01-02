@@ -35,6 +35,11 @@ Joy_1_0_gir_CFLAGS = $(libjoy_1_0_la_CPPFLAGS)
 Joy_1_0_gir_LIBS = libjoy-1.0.la
 Joy_1_0_gir_FILES = $(libjoy_1_0_la_SOURCES)
 INTROSPECTION_GIRS += Joy-1.0.gir
+if GTK_ON
+Joy_1_0_gir_LIBS += libjoy-gtk-1.0.la
+Joy_1_0_gir_FILES += $(libjoy_gtk_1_0_la_SOURCES)
+Joy_1_0_gir_CFLAGS += $(libjoy_gtk_1_0_la_CPPFLAGS)
+endif
 
 girdir = $(datadir)/gir-1.0
 gir_DATA = $(INTROSPECTION_GIRS)

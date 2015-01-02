@@ -141,7 +141,7 @@ void joy_stick_enum_free(GList* enumeration) {
 }
 
 /** 
-  * joy_stick_enumerate: (transfer full)
+  * joy_stick_enumerate:
   *
   * Enumerate all joystick device nodes on this system
   *

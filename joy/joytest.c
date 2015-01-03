@@ -67,13 +67,13 @@ static void set_axis_count(JoyStick* stick, guchar count, GtkBuilder* builder) {
 	GtkGrid* grid = GTK_GRID(gtk_builder_get_object(builder, "detailsgrid"));
 
 	if(count > curcount) {
-		for(unsigned char i=curcount; i<count; i++) {
+		for(int i=curcount; i<count; i++) {
 			GtkWidget* widg = gtk_label_new("0");
 			g_object_set(G_OBJECT(widg), "xalign", 0.0, "width_chars", 6, NULL);
 			gtk_grid_attach(grid, widg, i+2, 2, 1, 1);
 		}
 	} else {
-		for(unsigned char i=curcount-1; i>=count; i--) {
+		for(int i=curcount-1; i>=count; i--) {
 			gtk_widget_destroy(gtk_grid_get_child_at(grid, i+2, 2));
 		}
 	}
@@ -91,13 +91,13 @@ static void set_button_count(JoyStick* stick, guchar count, GtkBuilder* builder)
 	GtkGrid* grid = GTK_GRID(gtk_builder_get_object(builder, "detailsgrid"));
 
 	if(count > curcount) {
-		for(unsigned char i=curcount; i<count; i++) {
+		for(int i=curcount; i<count; i++) {
 			GtkWidget* but = gtk_check_button_new();
 			gtk_widget_set_sensitive(but, FALSE);
 			gtk_grid_attach(grid, but, i+2, 1, 1, 1);
 		}
 	} else {
-		for(unsigned char i=curcount-1; i>=count; i--) {
+		for(int i=curcount-1; i>=count; i--) {
 			gtk_widget_destroy(gtk_grid_get_child_at(grid, i+2, 1));
 		}
 	}
@@ -115,22 +115,24 @@ void tree_selection_changed(GtkTreeSelection* sel, gpointer data) {
 	GtkTreeModel *model;
 	GtkBuilder *builder = GTK_BUILDER(data);
 
+	if(button_p_handler) {
+		g_signal_handler_disconnect(active, button_p_handler);
+	}
+	if(button_r_handler) {
+		g_signal_handler_disconnect(active, button_r_handler);
+	}
+	if(axis_handler) {
+		g_signal_handler_disconnect(active, axis_handler);
+	}
+	if(lost_handler) {
+		g_signal_handler_disconnect(active, lost_handler);
+	}
+	if(active) {
+		g_object_unref(G_OBJECT(active));
+	}
+	GtkWidget *widget = GTK_WIDGET(gtk_builder_get_object(builder, "namelabel"));
+	GtkGrid* grid = GTK_GRID(gtk_builder_get_object(builder, "detailsgrid"));
 	if(gtk_tree_selection_get_selected(sel, &model, &iter)) {
-		if(button_p_handler) {
-			g_signal_handler_disconnect(active, button_p_handler);
-		}
-		if(button_r_handler) {
-			g_signal_handler_disconnect(active, button_r_handler);
-		}
-		if(axis_handler) {
-			g_signal_handler_disconnect(active, axis_handler);
-		}
-		if(lost_handler) {
-			g_signal_handler_disconnect(active, lost_handler);
-		}
-		if(active) {
-			g_object_unref(G_OBJECT(active));
-		}
 		gtk_tree_model_get(model, &iter, JOY_COLUMN_OBJECT, &active, -1);
 		g_object_ref(G_OBJECT(active));
 
@@ -141,7 +143,6 @@ void tree_selection_changed(GtkTreeSelection* sel, gpointer data) {
 		guchar axes = joy_stick_get_axis_count(active);
 		guchar buttons = joy_stick_get_button_count(active);
 
-		GtkGrid* grid = GTK_GRID(gtk_builder_get_object(builder, "detailsgrid"));
 		set_axis_count(active, axes, builder);
 		set_button_count(active, buttons, builder);
 		gtk_container_child_set(GTK_CONTAINER(grid), widget, "width", axes > buttons ? axes : (buttons > 1 ? buttons : 1), NULL);
@@ -150,6 +151,13 @@ void tree_selection_changed(GtkTreeSelection* sel, gpointer data) {
 		button_r_handler = g_signal_connect(G_OBJECT(active), "button-released", G_CALLBACK(button_released), grid);
 		axis_handler = g_signal_connect(G_OBJECT(active), "axis-moved", G_CALLBACK(axis_moved), grid);
 		lost_handler = g_signal_connect(G_OBJECT(active), "disconnected", G_CALLBACK(lost), NULL);
+	} else {
+		set_axis_count(NULL, 0, builder);
+		set_button_count(NULL, 0, builder);
+		gtk_label_set_text(GTK_LABEL(widget), "");
+		gtk_container_child_set(GTK_CONTAINER(grid), widget, "width", 1, NULL);
+
+		button_p_handler = button_r_handler = axis_handler = lost_handler = 0;
 	}
 }
 

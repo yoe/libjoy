@@ -5,6 +5,6 @@ compiler:
 install:
   - sudo sh .travis/add-trusty
   - sudo apt-get update
-  - sudo apt-get -t trusty install automake
+  - sudo apt-get -t trusty install automake autoconf
   - sudo apt-get install
 script: autoreconf -f -i && ./configure && make

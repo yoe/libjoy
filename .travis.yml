@@ -7,4 +7,4 @@ install:
   - sudo apt-get update
   - sudo apt-get -t trusty install automake autoconf
   - sudo apt-get install
-script: autoreconf -f -i && ./configure && make
+script: ./autogen.sh && ./configure && make

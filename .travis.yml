@@ -1,0 +1,10 @@
+language: c
+compiler:
+  - clang
+  - gcc
+install:
+  - sudo sh .travis/add-trusty
+  - sudo apt-get update
+  - sudo apt-get -t trusty install automake
+  - sudo apt-get install
+script: autoreconf -f -i && ./configure && make

@@ -6,5 +6,5 @@ install:
   - sudo sh .travis/add-trusty
   - sudo apt-get update
   - sudo apt-get -t trusty install automake autoconf
-  - sudo apt-get install gtk-doc-tools
+  - sudo apt-get install gtk-doc-tools libudev-dev gobject-introspection
 script: ./autogen.sh && ./configure --with-gtk && make

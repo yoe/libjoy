@@ -1,10 +1,9 @@
 language: c
+sudo: required
+dist: trusty
 compiler:
   - clang
   - gcc
 install:
-  - sudo sh .travis/add-trusty
-  - sudo apt-get update
-  - sudo apt-get -t trusty install automake autoconf
-  - sudo apt-get install gtk-doc-tools libudev-dev gobject-introspection
+  - sudo apt-get install gtk-doc-tools libudev-dev gobject-introspection automake autoconf
 script: ./autogen.sh && ./configure --with-gtk && make

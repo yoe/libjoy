@@ -7,4 +7,4 @@ compiler:
 install:
   - sudo apt-get update
   - sudo apt-get -y install gtk-doc-tools libudev-dev gobject-introspection automake autoconf libgtk-3-dev
-script: ./autogen.sh && ./configure --with-gtk && make
+script: ./autogen.sh && ./configure --with-gtk && make && make distcheck
